@@ -8,6 +8,10 @@ php:
 services:
   - docker
 
+cache:
+  directories:
+  - $HOME/.composer/cache
+
 before_install:
 - docker pull ridibooks/performance-php-test
 
