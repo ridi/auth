@@ -13,3 +13,8 @@ before_install:
 
 script:
 - docker run -v $(pwd):/code ridibooks/performance-php-test /bin/sh -c "cd /code; bin/test.sh;"
+
+notifications:
+  email:
+    on_success: never
+    on_failure: always
