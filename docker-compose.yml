@@ -1,0 +1,30 @@
+version: '2'
+
+services:
+  web:
+    image: ${DOCKER_REPO}:${DOCKER_TAG}
+    volumes:
+      - session:/tmp
+    ports:
+      - 0:80
+    cpu_shares: 100
+    mem_limit: 104857600
+    environment:
+      DEBUG: 0
+      OAUTH_DOMAIN: ${OAUTH_DOMAIN}
+      OAUTH_DBHOST: ${OAUTH_DBHOST}
+      OAUTH_DBPORT: ${OAUTH_DBPORT}
+      OAUTH_DBNAME: ${OAUTH_DBNAME}
+      OAUTH_DBUSER: ${OAUTH_DBUSER}
+      OAUTH_DBPASS: ${OAUTH_DBPASS}
+      OAUTH_CODE_LIFETIME: 60
+      OAUTH_ACCESS_LIFETIME: 604800
+      OAUTH_REFRESH_TOKEN_LIFETIME: 1209600
+      USER_DBHOST: ${USER_DBHOST}
+      USER_DBPORT: ${USER_DBPORT}
+      USER_DBNAME: ${USER_DBNAME}
+      USER_DBUSER: ${USER_DBUSER}
+      USER_DBPASS: ${USER_DBPASS}
+
+volumes:
+  session:

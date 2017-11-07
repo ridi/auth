@@ -25,12 +25,8 @@
     }
   },
   "scripts": {
-    "phinx": [
-      "phinx migrate",
-      "phinx seed:run"
-    ],
     "test": "phpunit -c tests/phpunit.xml",
-    "run": "php -S localhost:8000 -t web",
+    "run": "php -S localhost:8010 -t web",
     "clear": [
       "rm -rf vendor",
       "rm -rf var/cache",

@@ -3,13 +3,24 @@
 # Set up
 service mysql start
 mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS oauth2_db'
-composer install
-composer run-script phinx
+vendor/bin/phinx migrate -e local
+vendor/bin/phinx seed:run -e local
 
-# Run phpunit
+# Run PHPUnit
 composer run-script test
+PHPUNIT_RESULT=$?
+if [ ${PHPUNIT_RESULT} -ne 0 ]; then
+    printf '%s\n' 'Unit test failed!' >&2
+    exit ${PHPUNIT_RESULT}
+fi
 
-# Run Postman
-php -S localhost:8000 -t tests/integration/web & TEST_WEB_PID=$!
+# Run Newman
+php -S localhost:8010 -t tests/integration/web & TEST_WEB_PID=$!
 newman run tests/integration/postman/Performance_Auth_Test.postman_collection.json -e tests/integration/postman/local.postman_environment.json --ignore-redirects
-kill $TEST_WEB_PID
+NEWMAN_RESULT=$?
+kill ${TEST_WEB_PID}
+if [ ${NEWMAN_RESULT} -ne 0 ]; then
+    printf '%s\n' 'Integration test failed!' >&2
+    exit ${NEWMAN_RESULT}
+fi
+

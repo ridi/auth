@@ -6,7 +6,6 @@ namespace Ridibooks\Auth\Controller;
 use Ridibooks\Auth\Services\OAuth2Service;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class OAuth2Controller
 {

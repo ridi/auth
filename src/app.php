@@ -24,18 +24,20 @@ $app->register(new TwigServiceProvider(), [
 $app->register(new OAuth2ServiceProvider(), [
     'oauth2.db' => [
         'default' => [
-            'host' => $_ENV['OAUTH_DB_HOST'],
-            'dbname' => $_ENV['OAUTH_DB_DBNAME'],
-            'user' => $_ENV['OAUTH_DB_USER'],
-            'password' => $_ENV['OAUTH_DB_PASSWORD'],
+            'host' => $_ENV['OAUTH_DBHOST'],
+            'port' => (getenv('OAUTH_DBPORT') === false) ?: 3306,
+            'dbname' => $_ENV['OAUTH_DBNAME'],
+            'user' => $_ENV['OAUTH_DBUSER'],
+            'password' => $_ENV['OAUTH_DBPASS'],
             'driver' => 'pdo_mysql',
             'charset' => 'utf8',
         ],
         'user_credential' => [
-            'host' => $_ENV['USER_DB_HOST'],
-            'dbname' => $_ENV['USER_DB_DBNAME'],
-            'user' => $_ENV['USER_DB_USER'],
-            'password' => $_ENV['USER_DB_PASSWORD'],
+            'host' => $_ENV['USER_DBHOST'],
+            'port' => (getenv('USER_DBPORT') === false) ?: 3306,
+            'dbname' => $_ENV['USER_DBNAME'],
+            'user' => $_ENV['USER_DBUSER'],
+            'password' => $_ENV['USER_DBPASS'],
             'driver' => 'pdo_mysql',
             'charset' => 'utf8',
         ]
@@ -47,7 +49,7 @@ $app->register(new SessionServiceProvider(), [
     'session.storage.options' => [
         'cookie_lifttime' => 60 * 60 * 24 * 90,
         'cookie_path' => '/',
-        'cookie_domain' => $_ENV['DOMAIN'],
+        'cookie_domain' => $_ENV['OAUTH_DOMAIN'],
     ],
 ]);
 

@@ -6,7 +6,16 @@ require_once __DIR__ . '/../vendor/autoload.php';
 if (is_readable(__DIR__ . '/../.env')) {
     $dotenv = new Dotenv\Dotenv(__DIR__, '/../.env');
     $dotenv->overload();
-    $dotenv->required(['OAUTH_DB_HOST', 'OAUTH_DB_DBNAME', 'OAUTH_DB_USER', 'OAUTH_DB_PASSWORD']);
+    $dotenv->required([
+        'OAUTH_DBHOST',
+        'OAUTH_DBNAME',
+        'OAUTH_DBUSER',
+        'OAUTH_DBPASS',
+        'USER_DBHOST',
+        'USER_DBNAME',
+        'USER_DBUSER',
+        'USER_DBPASS',
+    ]);
 }
 
 $app = require_once __DIR__ . '/../src/app.php';

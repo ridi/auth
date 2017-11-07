@@ -45,18 +45,20 @@ abstract class OAuth2TestBase extends TestCase
     {
         return [
             'default' => [
-                'host' => $_ENV['OAUTH_DB_HOST'],
-                'dbname' => $_ENV['OAUTH_DB_DBNAME'],
-                'user' => $_ENV['OAUTH_DB_USER'],
-                'password' => $_ENV['OAUTH_DB_PASSWORD'],
+                'host' => $_ENV['OAUTH_DBHOST'],
+                'port' => $_ENV['OAUTH_DBPORT'],
+                'dbname' => $_ENV['OAUTH_DBNAME'],
+                'user' => $_ENV['OAUTH_DBUSER'],
+                'password' => $_ENV['OAUTH_DBPASS'],
                 'driver' => 'pdo_mysql',
                 'charset' => 'utf8',
             ],
             'user_credential' => [
-                'host' => $_ENV['USER_DB_HOST'],
-                'dbname' => $_ENV['USER_DB_DBNAME'],
-                'user' => $_ENV['USER_DB_USER'],
-                'password' => $_ENV['USER_DB_PASSWORD'],
+                'host' => $_ENV['USER_DBHOST'],
+                'port' => $_ENV['USER_DBPORT'],
+                'dbname' => $_ENV['USER_DBNAME'],
+                'user' => $_ENV['USER_DBUSER'],
+                'password' => $_ENV['USER_DBPASS'],
                 'driver' => 'pdo_mysql',
                 'charset' => 'utf8',
             ]

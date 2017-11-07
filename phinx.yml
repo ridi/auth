@@ -11,7 +11,14 @@ environments:
         name: oauth2_db
         user: root
         pass: root
-        port: 3306
+        charset: utf8
+    prod:
+        adapter: mysql
+        host: %%PHINX_DBHOST%%
+        port: %%PHINX_DBPORT%%
+        name: %%PHINX_DBNAME%%
+        user: %%PHINX_DBUSER%%
+        pass: %%PHINX_DBPASS%%
         charset: utf8
 
 version_order: creation
