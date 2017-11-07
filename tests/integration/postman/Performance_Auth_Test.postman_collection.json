@@ -1,0 +1,2109 @@
+{
+	"variables": [],
+	"info": {
+		"name": "Performance Auth Test",
+		"_postman_id": "963a0221-3c77-7f61-311a-633de88929ce",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Pre Script",
+			"description": "",
+			"item": [
+				{
+					"name": "전역 변수 초기화",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"postman.setGlobalVariable(\"loadHelpers\", function loadHelpers() {",
+									"    let helpers = {};",
+									"    let escapedUtf16Regex = /\\\\u([\\d\\w]{4})/gi;",
+									"    helpers.printResponseBody = () => {",
+									"        // convert escpaped UTF-16 string to string",
+									"        // https://stackoverflow.com/questions/7885096/how-do-i-decode-a-string-with-escaped-unicode",
+									"        let body = responseBody.replace(escapedUtf16Regex, (match, grp) => String.fromCharCode(parseInt(grp, 16)));",
+									"        body = unescape(body);",
+									"        // remove html tags",
+									"        if (postman.getResponseHeader(\"Content-Type\") === 'text/html') {",
+									"            body = body.replace(/(<([^>]+)>)/gi, \"\\n\");",
+									"        }",
+									"        console.log(body);",
+									"    };",
+									"",
+									"    helpers.testStatus = (status) => {",
+									"        tests[`Check status code === ${status}`] = responseCode.code === status;",
+									"    };",
+									"",
+									"    return helpers;",
+									"} + '; loadHelpers();'); // when eval'd out of globals, execute it",
+									"",
+									"postman.setGlobalVariable('state', Math.floor(Math.random() * (999999 - 100000)) + 100000);",
+									"",
+									"tests[\"Global variables initialized\"] = true;"
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "{{prefix}}",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "/auth: 인증 처리",
+			"description": "",
+			"item": [
+				{
+					"name": "/oauth2: OAuth2 인증 처리",
+					"description": "",
+					"item": [
+						{
+							"name": "/authorize: authorization code 발급",
+							"description": "",
+							"item": [
+								{
+									"name": "301: 로그인 안한 상태로 요청 -> 로그인 페이지로 redirect",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(302);",
+													"",
+													"tests[\"Redirect to login page\"] = postman.getResponseHeader(\"Location\").has('/auth/login?return_url=');"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri={{redirect_uri}}",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"oauth2",
+												"authorize"
+											],
+											"query": [
+												{
+													"key": "client_id",
+													"value": "{{client_id}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "response_type",
+													"value": "code",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "state",
+													"value": "{{state}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "redirect_uri",
+													"value": "{{redirect_uri}}",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "GET",
+										"header": [],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "# 준비: 로그인",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"cookie = jsonData['cookie'];",
+													"",
+													"tests[\"Check login session\"] = cookie;",
+													"",
+													"//postman.setGlobalVariable(\"session_id\", postman.getResponseCookie('PHPSESSID').value);",
+													"postman.setGlobalVariable('session_id', cookie.split('=')[1]);",
+													"postman.setGlobalVariable('cookie', postman.getResponseHeader('Set-Cookie'));"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": "{{prefix}}/test-login",
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"description": "",
+													"key": "user_id",
+													"type": "text",
+													"value": "{{user_id}}"
+												},
+												{
+													"description": "",
+													"key": "password",
+													"type": "text",
+													"value": "{{password}}"
+												}
+											]
+										},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "400: 잘못된 client_id",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(400);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"error exists\"] = jsonData.error === 'invalid_client';",
+													"tests[\"error_description exists\"] = jsonData.error_description === \"The client id supplied is invalid\";"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/oauth2/authorize?client_id=wrong_client_id&response_type=code&state={{state}}&redirect_uri={{redirect_uri}}",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"oauth2",
+												"authorize"
+											],
+											"query": [
+												{
+													"key": "client_id",
+													"value": "wrong_client_id",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "response_type",
+													"value": "code",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "state",
+													"value": "{{state}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "redirect_uri",
+													"value": "{{redirect_uri}}",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "{{cookie}}",
+												"description": ""
+											}
+										],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "400: client_id 누락",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(400);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"error exists\"] = jsonData.error === 'invalid_client';",
+													"tests[\"error_description exists\"] = jsonData.error_description === \"No client id supplied\";"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/oauth2/authorize?response_type=code&state={{state}}&redirect_uri={{redirect_uri}}",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"oauth2",
+												"authorize"
+											],
+											"query": [
+												{
+													"key": "response_type",
+													"value": "code",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "state",
+													"value": "{{state}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "redirect_uri",
+													"value": "{{redirect_uri}}",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "{{cookie}}",
+												"description": ""
+											}
+										],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "400: 잘못된 redirect_url",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(400);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"error exists\"] = jsonData.error === 'redirect_uri_mismatch';",
+													"tests[\"error_description exists\"] = jsonData.error_description === 'The redirect URI provided is missing or does not match';",
+													"tests[\"error_uri exists\"] = jsonData.error_uri === '#section-3.1.2';"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri=http://bad-url.com",
+											"protocol": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri=http",
+											"host": [
+												"bad-url",
+												"com"
+											],
+											"query": [
+												{
+													"key": "client_id",
+													"value": "{{client_id}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "response_type",
+													"value": "code",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "state",
+													"value": "{{state}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "redirect_uri",
+													"value": "http://bad-url.com",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "{{cookie}}",
+												"description": ""
+											}
+										],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "302: state 누락 -> 외부 서비스로 error 리턴",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(302);",
+													"",
+													"const redirectTo = postman.getResponseHeader(\"Location\");",
+													"const params = redirectTo.split('?')[1];",
+													"const eachParams = params.split('&');",
+													"",
+													"let paramMap = {};",
+													"eachParams.forEach((param) => {",
+													"    const key = param.split('=')[0];",
+													"    const value = param.split('=')[1];",
+													"    Object.assign(paramMap, {[key]: value});",
+													"});",
+													"",
+													"tests[\"Redirect to client receive url\"] = redirectTo.has(pm.environment.get('redirect_uri'))",
+													"tests[\"Redirect url has error param\"] = paramMap['error']==='invalid_request'",
+													"tests[\"Redirect url has error_description param\"] = paramMap['error_description']==='The+state+parameter+is+required'"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&redirect_uri={{redirect_uri}}",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"oauth2",
+												"authorize"
+											],
+											"query": [
+												{
+													"key": "client_id",
+													"value": "{{client_id}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "response_type",
+													"value": "code",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "redirect_uri",
+													"value": "{{redirect_uri}}",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "{{cookie}}",
+												"description": ""
+											}
+										],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "200: 동의 안한 상태로 접근 시 외부 서비스 접근 확인 페이지 출력",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"tests[\"Render agreement page\"] = responseBody.has(\"정보제공 동의\");",
+													"tests[\"Do not redirect\"] = !postman.getResponseHeader(\"Location\");"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri={{redirect_uri}}",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"oauth2",
+												"authorize"
+											],
+											"query": [
+												{
+													"key": "client_id",
+													"value": "{{client_id}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "response_type",
+													"value": "code",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "state",
+													"value": "{{state}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "redirect_uri",
+													"value": "{{redirect_uri}}",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "{{cookie}}",
+												"description": ""
+											}
+										],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "302: 외부 서비스 접근 동의 -> 외부 서비스로 code 발급",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(302);",
+													"",
+													"tests[\"Do not render agreement page\"] = !responseBody.has(\"정보제공 동의\");",
+													"",
+													"const redirectTo = postman.getResponseHeader(\"Location\");",
+													"const params = redirectTo.split('?')[1];",
+													"const eachParams = params.split('&');",
+													"",
+													"let paramMap = {};",
+													"eachParams.forEach((param) => {",
+													"    const key = param.split('=')[0];",
+													"    const value = param.split('=')[1];",
+													"    Object.assign(paramMap, {[key]: value});",
+													"});",
+													"",
+													"tests[\"Redirect to client receive url\"] = redirectTo.has(pm.environment.get('redirect_uri'))",
+													"tests[\"Redirect url has code param\"] = paramMap['code']",
+													"tests[\"Redirect url has state param\"] = paramMap['state']===postman.getGlobalVariable('state')",
+													"",
+													"postman.setGlobalVariable('authorization_code', paramMap['code']);"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri={{redirect_uri}}",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"oauth2",
+												"authorize"
+											],
+											"query": [
+												{
+													"key": "client_id",
+													"value": "{{client_id}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "response_type",
+													"value": "code",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "state",
+													"value": "{{state}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "redirect_uri",
+													"value": "{{redirect_uri}}",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "{{cookie}}",
+												"description": ""
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"description": "",
+													"key": "agree",
+													"type": "text",
+													"value": "1"
+												}
+											]
+										},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "302: 동의 한 상태로 접근 시 -> 외부 서비스로 code 발급",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(302);",
+													"",
+													"tests[\"Do not render agreement page\"] = !responseBody.has(\"정보제공 동의\");",
+													"",
+													"const redirectTo = postman.getResponseHeader(\"Location\");",
+													"const params = redirectTo.split('?')[1];",
+													"const eachParams = params.split('&');",
+													"",
+													"let paramMap = {};",
+													"eachParams.forEach((param) => {",
+													"    const key = param.split('=')[0];",
+													"    const value = param.split('=')[1];",
+													"    Object.assign(paramMap, {[key]: value});",
+													"});",
+													"",
+													"tests[\"Redirect to client receive url\"] = redirectTo.has(pm.environment.get('redirect_uri'))",
+													"tests[\"Redirect url has code param\"] = paramMap['code']",
+													"tests[\"Redirect url has state param\"] = paramMap['state']===postman.getGlobalVariable('state')",
+													"",
+													"postman.setGlobalVariable('authorization_code', paramMap['code']);"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri={{redirect_uri}}",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"oauth2",
+												"authorize"
+											],
+											"query": [
+												{
+													"key": "client_id",
+													"value": "{{client_id}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "response_type",
+													"value": "code",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "state",
+													"value": "{{state}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "redirect_uri",
+													"value": "{{redirect_uri}}",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "{{cookie}}",
+												"description": ""
+											}
+										],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "302: 외부 서비스 접근 거부 시  -> 외부 서비스로 error 리턴",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(302);",
+													"",
+													"const redirectTo = postman.getResponseHeader(\"Location\");",
+													"const params = redirectTo.split('?')[1];",
+													"const eachParams = params.split('&');",
+													"",
+													"let paramMap = {};",
+													"eachParams.forEach((param) => {",
+													"    const key = param.split('=')[0];",
+													"    const value = param.split('=')[1];",
+													"    Object.assign(paramMap, {[key]: value});",
+													"});",
+													"",
+													"tests[\"Redirect to client receive url\"] = redirectTo.has(pm.environment.get('redirect_uri'))",
+													"tests[\"Redirect url has error param\"] = paramMap['error'] === 'access_denied'",
+													"tests[\"Redirect url has error_description param\"] = paramMap['error_description'] === 'The+user+denied+access+to+your+application'",
+													"tests[\"Redirect url has state param\"] = paramMap['state'] === postman.getGlobalVariable('state')"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri={{redirect_uri}}",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"oauth2",
+												"authorize"
+											],
+											"query": [
+												{
+													"key": "client_id",
+													"value": "{{client_id}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "response_type",
+													"value": "code",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "state",
+													"value": "{{state}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "redirect_uri",
+													"value": "{{redirect_uri}}",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "{{cookie}}",
+												"description": ""
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"description": "",
+													"key": "agree",
+													"type": "text",
+													"value": "0"
+												}
+											]
+										},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "# 검증: 외부 서비스 접근 거부 이후 다시 동의 페이지 출력",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"tests[\"Render agreement page\"] = responseBody.has(\"정보제공 동의\");",
+													"tests[\"Do not redirect\"] = !postman.getResponseHeader(\"Location\");"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri={{redirect_uri}}",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"oauth2",
+												"authorize"
+											],
+											"query": [
+												{
+													"key": "client_id",
+													"value": "{{client_id}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "response_type",
+													"value": "code",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "state",
+													"value": "{{state}}",
+													"equals": true,
+													"description": ""
+												},
+												{
+													"key": "redirect_uri",
+													"value": "{{redirect_uri}}",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "{{cookie}}",
+												"description": ""
+											}
+										],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "/token: token 발급",
+							"description": "",
+							"item": [
+								{
+									"name": "authorization code 방식",
+									"description": "",
+									"item": [
+										{
+											"name": "# 준비: 외부 서비스 접근 동의",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(302);",
+															"",
+															"tests[\"Do not render agreement page\"] = !responseBody.has(\"정보제공 동의\");",
+															"",
+															"const redirectTo = postman.getResponseHeader(\"Location\");",
+															"const params = redirectTo.split('?')[1];",
+															"const eachParams = params.split('&');",
+															"",
+															"let paramMap = {};",
+															"eachParams.forEach((param) => {",
+															"    const key = param.split('=')[0];",
+															"    const value = param.split('=')[1];",
+															"    Object.assign(paramMap, {[key]: value});",
+															"});",
+															"",
+															"tests[\"Redirect to client receive url\"] = redirectTo.has(pm.environment.get('redirect_uri'))",
+															"tests[\"Redirect url has code param\"] = paramMap['code']",
+															"tests[\"Redirect url has state param\"] = paramMap['state']===postman.getGlobalVariable('state')",
+															"",
+															"postman.setGlobalVariable('authorization_code', paramMap['code']);"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": {
+													"raw": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri={{redirect_uri}}",
+													"host": [
+														"{{prefix}}"
+													],
+													"path": [
+														"oauth2",
+														"authorize"
+													],
+													"query": [
+														{
+															"key": "client_id",
+															"value": "{{client_id}}",
+															"equals": true,
+															"description": ""
+														},
+														{
+															"key": "response_type",
+															"value": "code",
+															"equals": true,
+															"description": ""
+														},
+														{
+															"key": "state",
+															"value": "{{state}}",
+															"equals": true,
+															"description": ""
+														},
+														{
+															"key": "redirect_uri",
+															"value": "{{redirect_uri}}",
+															"equals": true,
+															"description": ""
+														}
+													],
+													"variable": []
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Cookie",
+														"value": "{{cookie}}",
+														"description": ""
+													}
+												],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "agree",
+															"type": "text",
+															"value": "1"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										},
+										{
+											"name": "200: token 발급 성공",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(200);",
+															"",
+															"const jsonData = JSON.parse(responseBody);",
+															"tests[\"access_token exists\"] = jsonData.access_token;",
+															"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
+															"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
+															"tests[\"refresh_token exists\"] = jsonData.refresh_token",
+															"",
+															"postman.setGlobalVariable('access_token', jsonData.access_token);",
+															"postman.setGlobalVariable('refresh_token', jsonData.refresh_token);"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": "{{prefix}}/oauth2/token",
+												"method": "POST",
+												"header": [
+													{
+														"key": "Cookie",
+														"value": "{{cookie}}",
+														"description": ""
+													}
+												],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "grant_type",
+															"type": "text",
+															"value": "authorization_code"
+														},
+														{
+															"description": "",
+															"key": "client_id",
+															"type": "text",
+															"value": "{{client_id}}"
+														},
+														{
+															"description": "",
+															"key": "client_secret",
+															"type": "text",
+															"value": "{{client_secret}}"
+														},
+														{
+															"description": "",
+															"key": "code",
+															"type": "text",
+															"value": "{{authorization_code}}"
+														},
+														{
+															"description": "",
+															"key": "redirect_uri",
+															"type": "text",
+															"value": "{{redirect_uri}}"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										},
+										{
+											"name": "400: 이미 사용한 authorization code 사용",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(400);",
+															"",
+															"const jsonData = JSON.parse(responseBody);",
+															"tests[\"error exists\"] = jsonData.error === 'invalid_grant';",
+															"tests[\"error_description exists\"] = jsonData.error_description === \"Authorization code doesn't exist or is invalid for the client\";"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": "{{prefix}}/oauth2/token",
+												"method": "POST",
+												"header": [
+													{
+														"key": "Cookie",
+														"value": "{{cookie}}",
+														"description": ""
+													}
+												],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "grant_type",
+															"type": "text",
+															"value": "authorization_code"
+														},
+														{
+															"description": "",
+															"key": "client_id",
+															"type": "text",
+															"value": "{{client_id}}"
+														},
+														{
+															"description": "",
+															"key": "client_secret",
+															"type": "text",
+															"value": "{{client_secret}}"
+														},
+														{
+															"description": "",
+															"key": "code",
+															"type": "text",
+															"value": "{{authorization_code}}"
+														},
+														{
+															"description": "",
+															"key": "redirect_uri",
+															"type": "text",
+															"value": "{{redirect_uri}}"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										},
+										{
+											"name": "# 준비: 외부 서비스 접근 거부 (authorization code 무효화)",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(302);",
+															"",
+															"const redirectTo = postman.getResponseHeader(\"Location\");",
+															"const params = redirectTo.split('?')[1];",
+															"const eachParams = params.split('&');",
+															"",
+															"let paramMap = {};",
+															"eachParams.forEach((param) => {",
+															"    const key = param.split('=')[0];",
+															"    const value = param.split('=')[1];",
+															"    Object.assign(paramMap, {[key]: value});",
+															"});",
+															"",
+															"tests[\"Redirect to client receive url\"] = redirectTo.has(pm.environment.get('redirect_uri'))",
+															"tests[\"Redirect url has error param\"] = paramMap['error'] === 'access_denied'",
+															"tests[\"Redirect url has error_description param\"] = paramMap['error_description'] === 'The+user+denied+access+to+your+application'",
+															"tests[\"Redirect url has state param\"] = paramMap['state'] === postman.getGlobalVariable('state')"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": {
+													"raw": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri={{redirect_uri}}",
+													"host": [
+														"{{prefix}}"
+													],
+													"path": [
+														"oauth2",
+														"authorize"
+													],
+													"query": [
+														{
+															"key": "client_id",
+															"value": "{{client_id}}",
+															"equals": true,
+															"description": ""
+														},
+														{
+															"key": "response_type",
+															"value": "code",
+															"equals": true,
+															"description": ""
+														},
+														{
+															"key": "state",
+															"value": "{{state}}",
+															"equals": true,
+															"description": ""
+														},
+														{
+															"key": "redirect_uri",
+															"value": "{{redirect_uri}}",
+															"equals": true,
+															"description": ""
+														}
+													],
+													"variable": []
+												},
+												"method": "POST",
+												"header": [
+													{
+														"key": "Cookie",
+														"value": "{{cookie}}",
+														"description": ""
+													}
+												],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "agree",
+															"type": "text",
+															"value": "0"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										},
+										{
+											"name": "400: 무효화된 authorization code 사용",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(400);",
+															"",
+															"const jsonData = JSON.parse(responseBody);",
+															"tests[\"error exists\"] = jsonData.error === 'invalid_grant';",
+															"tests[\"error_description exists\"] = jsonData.error_description === \"Authorization code doesn't exist or is invalid for the client\";"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": "{{prefix}}/oauth2/token",
+												"method": "POST",
+												"header": [
+													{
+														"key": "Cookie",
+														"value": "{{cookie}}",
+														"description": ""
+													}
+												],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "grant_type",
+															"type": "text",
+															"value": "authorization_code"
+														},
+														{
+															"description": "",
+															"key": "client_id",
+															"type": "text",
+															"value": "{{client_id}}"
+														},
+														{
+															"description": "",
+															"key": "client_secret",
+															"type": "text",
+															"value": "{{client_secret}}"
+														},
+														{
+															"description": "",
+															"key": "code",
+															"type": "text",
+															"value": "{{authorization_code}}"
+														},
+														{
+															"description": "",
+															"key": "redirect_uri",
+															"type": "text",
+															"value": "{{redirect_uri}}"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										}
+									],
+									"_postman_isSubFolder": true
+								},
+								{
+									"name": "user credentials 방식",
+									"description": "",
+									"item": [
+										{
+											"name": "401: 잘못된 user 인증",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(401);",
+															"",
+															"const jsonData = JSON.parse(responseBody);",
+															"tests[\"error exists\"] = jsonData.error === 'invalid_grant';",
+															"tests[\"error_description exists\"] = jsonData.error_description === \"Invalid username and password combination\";"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": "{{prefix}}/oauth2/token",
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "grant_type",
+															"type": "text",
+															"value": "password"
+														},
+														{
+															"description": "",
+															"key": "client_id",
+															"type": "text",
+															"value": "{{client_id}}"
+														},
+														{
+															"description": "",
+															"key": "client_secret",
+															"type": "text",
+															"value": "{{client_secret}}"
+														},
+														{
+															"description": "",
+															"key": "username",
+															"type": "text",
+															"value": "{{user_id}}"
+														},
+														{
+															"description": "",
+															"key": "password",
+															"type": "text",
+															"value": "wrong_password"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										},
+										{
+											"name": "401: 잘못된 client 인증",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(400);",
+															"",
+															"const jsonData = JSON.parse(responseBody);",
+															"tests[\"error exists\"] = jsonData.error === 'invalid_client';",
+															"tests[\"error_description exists\"] = jsonData.error_description === \"The client credentials are invalid\";"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": "{{prefix}}/oauth2/token",
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "grant_type",
+															"type": "text",
+															"value": "password"
+														},
+														{
+															"description": "",
+															"key": "client_id",
+															"type": "text",
+															"value": "{{client_id}}"
+														},
+														{
+															"description": "",
+															"key": "client_secret",
+															"type": "text",
+															"value": "wrong_client_secret"
+														},
+														{
+															"description": "",
+															"key": "username",
+															"type": "text",
+															"value": "{{user_id}}"
+														},
+														{
+															"description": "",
+															"key": "password",
+															"type": "text",
+															"value": "{{password}}"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										},
+										{
+											"name": "200: token 발급 성공",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(200);",
+															"",
+															"const jsonData = JSON.parse(responseBody);",
+															"tests[\"access_token exists\"] = jsonData.access_token;",
+															"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
+															"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
+															"tests[\"refresh_token exists\"] = jsonData.refresh_token",
+															"",
+															"postman.setGlobalVariable('access_token', jsonData.access_token);",
+															"postman.setGlobalVariable('refresh_token', jsonData.refresh_token);"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": "{{prefix}}/oauth2/token",
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "grant_type",
+															"type": "text",
+															"value": "password"
+														},
+														{
+															"description": "",
+															"key": "client_id",
+															"type": "text",
+															"value": "{{client_id}}"
+														},
+														{
+															"description": "",
+															"key": "client_secret",
+															"type": "text",
+															"value": "{{client_secret}}"
+														},
+														{
+															"description": "",
+															"key": "username",
+															"type": "text",
+															"value": "{{user_id}}"
+														},
+														{
+															"description": "",
+															"key": "password",
+															"type": "text",
+															"value": "{{password}}"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										}
+									],
+									"_postman_isSubFolder": true
+								},
+								{
+									"name": "refresh token 방식",
+									"description": "",
+									"item": [
+										{
+											"name": "400: 잘못된 refresh token 사용",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(400);",
+															"",
+															"const jsonData = JSON.parse(responseBody);",
+															"tests[\"error exists\"] = jsonData.error === 'invalid_grant';",
+															"tests[\"error_description exists\"] = jsonData.error_description === \"Invalid refresh token\";"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": "{{prefix}}/oauth2/token",
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "grant_type",
+															"type": "text",
+															"value": "refresh_token"
+														},
+														{
+															"description": "",
+															"key": "client_id",
+															"type": "text",
+															"value": "{{client_id}}"
+														},
+														{
+															"description": "",
+															"key": "client_secret",
+															"type": "text",
+															"value": "{{client_secret}}"
+														},
+														{
+															"description": "",
+															"key": "refresh_token",
+															"type": "text",
+															"value": "wrong_refresh_token"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										},
+										{
+											"name": "400: 잘못된 client 인증",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(400);",
+															"",
+															"const jsonData = JSON.parse(responseBody);",
+															"tests[\"error exists\"] = jsonData.error === 'invalid_client';",
+															"tests[\"error_description exists\"] = jsonData.error_description === \"The client credentials are invalid\";"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": "{{prefix}}/oauth2/token",
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "grant_type",
+															"type": "text",
+															"value": "password"
+														},
+														{
+															"description": "",
+															"key": "client_id",
+															"type": "text",
+															"value": "{{client_id}}"
+														},
+														{
+															"description": "",
+															"key": "client_secret",
+															"type": "text",
+															"value": "wrong_client_secret"
+														},
+														{
+															"description": "",
+															"key": "username",
+															"type": "text",
+															"value": "{{user_id}}"
+														},
+														{
+															"description": "",
+															"key": "password",
+															"type": "text",
+															"value": "{{password}}"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										},
+										{
+											"name": "200: token 발급 성공",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(200);",
+															"",
+															"const jsonData = JSON.parse(responseBody);",
+															"tests[\"access_token exists\"] = jsonData.access_token;",
+															"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
+															"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
+															"tests[\"refresh_token exists\"] = jsonData.refresh_token",
+															"",
+															"postman.setGlobalVariable('access_token', jsonData.access_token);",
+															"postman.setGlobalVariable('refresh_token', jsonData.refresh_token);"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": "{{prefix}}/oauth2/token",
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "grant_type",
+															"type": "text",
+															"value": "refresh_token"
+														},
+														{
+															"description": "",
+															"key": "client_id",
+															"type": "text",
+															"value": "{{client_id}}"
+														},
+														{
+															"description": "",
+															"key": "client_secret",
+															"type": "text",
+															"value": "{{client_secret}}"
+														},
+														{
+															"description": "",
+															"key": "refresh_token",
+															"type": "text",
+															"value": "{{refresh_token}}"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										}
+									],
+									"_postman_isSubFolder": true
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "/revoke: token 무효화",
+							"description": "",
+							"item": [
+								{
+									"name": "200: refresh token 무효화 성공",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"Check revoked\"] = jsonData.revoked === true;"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": "{{prefix}}/oauth2/revoke",
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"description": "",
+													"key": "token",
+													"type": "text",
+													"value": "{{refresh_token}}"
+												},
+												{
+													"key": "token_type_hint",
+													"value": "refresh_token",
+													"description": "",
+													"type": "text"
+												}
+											]
+										},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "# 검증: 무효화된 refresh token으로 access token 획득",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(400);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"error exists\"] = jsonData.error === 'invalid_grant';",
+													"tests[\"error_description exists\"] = jsonData.error_description === 'Invalid refresh token';"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": "{{prefix}}/oauth2/token",
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"description": "",
+													"key": "grant_type",
+													"type": "text",
+													"value": "refresh_token"
+												},
+												{
+													"description": "",
+													"key": "client_id",
+													"type": "text",
+													"value": "{{client_id}}"
+												},
+												{
+													"description": "",
+													"key": "client_secret",
+													"type": "text",
+													"value": "{{client_secret}}"
+												},
+												{
+													"description": "",
+													"key": "refresh_token",
+													"type": "text",
+													"value": "{{refresh_token}}"
+												}
+											]
+										},
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "OAuth2 사용 테스트",
+							"description": "",
+							"item": [
+								{
+									"name": "# 준비: token 발급",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"access_token exists\"] = jsonData.access_token;",
+													"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
+													"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
+													"tests[\"refresh_token exists\"] = jsonData.refresh_token",
+													"",
+													"postman.setGlobalVariable('access_token', jsonData.access_token);",
+													"postman.setGlobalVariable('refresh_token', jsonData.refresh_token);"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": "{{prefix}}/oauth2/token",
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"description": "",
+													"key": "grant_type",
+													"type": "text",
+													"value": "password"
+												},
+												{
+													"description": "",
+													"key": "client_id",
+													"type": "text",
+													"value": "{{client_id}}"
+												},
+												{
+													"description": "",
+													"key": "client_secret",
+													"type": "text",
+													"value": "{{client_secret}}"
+												},
+												{
+													"description": "",
+													"key": "username",
+													"type": "text",
+													"value": "{{user_id}}"
+												},
+												{
+													"description": "",
+													"key": "password",
+													"type": "text",
+													"value": "{{password}}"
+												}
+											]
+										},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "200: 리소스 접근 성공 (GET, param으로 token 전달)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"resource server can get client_id of token\"] = jsonData.client_id === pm.environment.get('client_id');",
+													"tests[\"resource server can get user_idx of token\"] = jsonData.user_idx === pm.environment.get('user_idx');"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/test-resource?access_token={{access_token}}",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"test-resource"
+											],
+											"query": [
+												{
+													"key": "access_token",
+													"value": "{{access_token}}",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "GET",
+										"header": [],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "200: 리소스 접근 성공 (GET, header로 token 전달)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"resource server can get client_id of token\"] = jsonData.client_id === pm.environment.get('client_id');",
+													"tests[\"resource server can get user_idx of token\"] = jsonData.user_idx === pm.environment.get('user_idx');"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": "{{prefix}}/test-resource",
+										"method": "GET",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{access_token}}",
+												"description": ""
+											}
+										],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "200: 리소스 접근 성공 (POST, param으로 token 전달)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"resource server can get client_id of token\"] = jsonData.client_id === pm.environment.get('client_id');",
+													"tests[\"resource server can get user_idx of token\"] = jsonData.user_idx === pm.environment.get('user_idx');"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/test-resource?access_token={{access_token}}",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"test-resource"
+											],
+											"query": [
+												{
+													"key": "access_token",
+													"value": "{{access_token}}",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "POST",
+										"header": [],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "200: 리소스 접근 성공 (POST, header로 token 전달)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"resource server can get client_id of token\"] = jsonData.client_id === pm.environment.get('client_id');",
+													"tests[\"resource server can get user_idx of token\"] = jsonData.user_idx === pm.environment.get('user_idx');"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": "{{prefix}}/test-resource",
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{access_token}}",
+												"description": ""
+											}
+										],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "401: 잘못된 token 사용",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(401);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"error exists\"] = jsonData.error === 'invalid_token';",
+													"tests[\"error_description exist\"] = jsonData.error_description === 'The access token provided is invalid';"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/test-resource?access_token=wrong_access_token",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"test-resource"
+											],
+											"query": [
+												{
+													"key": "access_token",
+													"value": "wrong_access_token",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "GET",
+										"header": [],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "400: param과 header 둘 다에 token을 전달",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(400);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"error exists\"] = jsonData.error === 'invalid_request';",
+													"tests[\"error_description exist\"] = jsonData.error_description === 'Only one method may be used to authenticate at a time (Auth header, GET or POST)';"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/test-resource?access_token=wrong_access_token",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"test-resource"
+											],
+											"query": [
+												{
+													"key": "access_token",
+													"value": "wrong_access_token",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "GET",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{access_token}}",
+												"description": ""
+											}
+										],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						}
+					],
+					"_postman_isSubFolder": true
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,40 @@
+{
+  "name": "ridibooks/auth",
+  "description": "Ridibooks Auth Service",
+  "type": "library",
+  "require": {
+    "bshaffer/oauth2-server-php": "~1.8",
+    "bshaffer/oauth2-server-httpfoundation-bridge": "v1.3",
+    "doctrine/dbal": "2.5.4",
+    "vlucas/phpdotenv": "^2.4",
+    "silex/silex": "^2.2",
+    "twig/twig": "^2.4"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^6.3",
+    "robmorgan/phinx": "^0.8.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Ridibooks\\Auth\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Ridibooks\\Tests\\Auth\\": "tests/unit"
+    }
+  },
+  "scripts": {
+    "phinx": [
+      "phinx migrate",
+      "phinx seed:run"
+    ],
+    "test": "phpunit -c tests/phpunit.xml",
+    "run": "php -S localhost:8000 -t web",
+    "clear": [
+      "rm -rf vendor",
+      "rm -rf var/cache",
+      "rm -rf var/sessions"
+    ]
+  }
+}

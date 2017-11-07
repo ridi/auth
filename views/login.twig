@@ -1,0 +1,10 @@
+<html>
+<body>
+    <h3>Login Page</h3>
+    <form action="/auth/login?return_url={{ return_url |url_encode }}" method="POST">
+        <input type="text" name="user_id" placeholder="ID" />
+        <input type="text" name="password" placeholder="PASSWORD" />
+        <button type="submit">로그인</buttom>
+    </form>
+</body>
+</html>
