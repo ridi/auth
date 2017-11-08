@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+
+RewriteEngine On
+
+RewriteCond %{REQUEST_URI} !.*\.(woff|ttf|svg|js|ico|bmp|gif|jpg|jpeg|png|css|htc|xml|txt|xls|csv|ppt|pdf|doc|docx)
+RewriteCond %{SCRIPT_FILENAME} !-f
+RewriteCond %{SCRIPT_FILENAME} !-d
+RewriteRule (.*) web/index.php?$0 [QSA,L]
+
+</IfModule>
