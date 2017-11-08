@@ -15,8 +15,8 @@ before_script:
 
 cache:
   directories:
-  - $HOME/.cache/composer/files
-  - $HOME/.composer/cache/files
+  - ${HOME}/.cache/composer/files
+  - ${HOME}/.composer/cache/files
 
 stages:
   - name: test
@@ -40,4 +40,11 @@ jobs:
 notifications:
   email:
     on_success: never
+    on_failure: always
+
+notifications:
+  email: false
+  slack:
+    rooms: ${SLACK_NOTIFICATION_ACCOUNT}:${SLACK_NOTIFICATION_TOKEN}
+    on_success: change
     on_failure: always
