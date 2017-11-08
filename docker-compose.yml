@@ -4,9 +4,9 @@ services:
   web:
     image: ${DOCKER_REPO}:${DOCKER_TAG}
     volumes:
-      - session:/tmp
+      - /tmp/auth:/var/www/html/var
     ports:
-      - 0:80
+      - ${OAUTH_WEBPORT}:80
     cpu_shares: 100
     mem_limit: 104857600
     environment:
@@ -25,6 +25,3 @@ services:
       USER_DBNAME: ${USER_DBNAME}
       USER_DBUSER: ${USER_DBUSER}
       USER_DBPASS: ${USER_DBPASS}
-
-volumes:
-  session:
