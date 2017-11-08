@@ -9,7 +9,7 @@ OAuth2 is providing. It is implemented based on [bshaffer/oauth2-server-php](htt
 ## Requirements
 - [Composer](https://getcomposer.org)
 - MySQL
-- [newman](https://github.com/postmanlabs/newman) (for test)
+- [Newman](https://github.com/postmanlabs/newman) (for test)
 
 ## Getting started
 1. Write `.env` for configuration:
@@ -25,9 +25,9 @@ OAUTH_DOMAIN={Cookie Domain}
 # OAuth DB connect
 OAUTH_DBHOST=127.0.0.1
 OAUTH_DBPORT=3306
-OAUTH_DBNAME=oauth2_db
+OAUTH_DBNAME=oauth2
 OAUTH_DBUSER=root
-OAUTH_DBPASS=root
+OAUTH_DBPASS=
 
 OAUTH_CODE_LIFETIME={TTL of authrization code}
 OAUTH_ACCESS_LIFETIME={TTL of access token}
@@ -36,9 +36,9 @@ OAUTH_REFRESH_TOKEN_LIFETIME={TTL of refresh token}
 # User DB connect
 USER_DBHOST=127.0.0.1
 USER_DBPORT=3306
-USER_DBNAME=oauth2_db
+USER_DBNAME=oauth2
 USER_DBUSER=root
-USER_DBPASS=root
+USER_DBPASS=
 ```
 
 2. Run server with `composer run`

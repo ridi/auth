@@ -8,9 +8,9 @@ environments:
     local:
         adapter: mysql
         host: 127.0.0.1
-        name: oauth2_db
+        name: oauth2
         user: root
-        pass: root
+        pass: ""
         charset: utf8
     prod:
         adapter: mysql

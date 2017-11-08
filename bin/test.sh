@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
 # Set up
-service mysql start
-mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS oauth2_db'
 vendor/bin/phinx migrate -e local
 vendor/bin/phinx seed:run -e local
 

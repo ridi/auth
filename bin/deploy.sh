@@ -6,9 +6,13 @@ export PHINX_DBPORT=${OAUTH_DBPORT:-3306}
 export PHINX_DBNAME=${OAUTH_DBNAME}
 export PHINX_DBUSER=${OAUTH_DBUSER}
 export PHINX_DBPASS=${OAUTH_DBPASS}
-vendor/bin/phinx migrate -e prod
+if ! vendor/bin/phinx migrate -e prod; then
+    printf '%s\n' 'DB migration failed!' >&2
+    exit 1
+fi
 
 # Deploy to AWS ECS
+export DOCKER_TAG=${TRAVIS_TAG:-latest}
 if ! [ -x "$(command -v ecs-cli)" ]; then
     UNAME_RESULT=`uname`
     if [[ "${UNAME_RESULT}" == 'Darwin' ]]; then
@@ -16,9 +20,8 @@ if ! [ -x "$(command -v ecs-cli)" ]; then
     else
        PLATFORM='linux'
     fi
-    sudo curl -o /usr/local/bin/ecs-cli https://s3.amazonaws.com/amazon-ecs-cli/ecs-cli-${PLATFORM}-amd64-latest
-    sudo chmod +x /usr/local/bin/ecs-cli
+    curl -o ecs-cli https://s3.amazonaws.com/amazon-ecs-cli/ecs-cli-${PLATFORM}-amd64-latest && chmod +x ecs-cli
+    ./ecs-cli compose up -c ${AWS_ECS_CLUSTER}
+else
+    ecs-cli compose up -c ${AWS_ECS_CLUSTER}
 fi
-
-export DOCKER_TAG=${TRAVIS_TAG:-latest}
-ecs-cli compose --file docker-compose.yml up -p ${TRAVIS_REPO_SLUG} -c ${AWS_ECS_CLUSTER}

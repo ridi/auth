@@ -1,12 +1,14 @@
-sudo: required
 os: linux
-language: php
+sudo: false
+dist: trusty
 
+language: php
 php:
   - '7.1'
 
 services:
   - docker
+  - mysql
 
 before_script:
   - composer install --prefer-dist
@@ -17,7 +19,7 @@ cache:
   - $HOME/.composer/cache/files
 
 stages:
-  - test
+  - name: test
   - name: push
     if: branch = master AND type = push
   - name: deploy
@@ -26,11 +28,13 @@ stages:
 jobs:
   include:
   - stage: test
-    script: docker run -v $(pwd):/code ridibooks/performance-php-test:7.1 /bin/sh -c "cd /code; bin/test.sh;"
+    before_install:
+    - mysql -uroot -e 'SET GLOBAL max_connections = 5000; CREATE DATABASE IF NOT EXISTS oauth2;'
+    - npm install newman -g
+    script: bin/test.sh
   - stage: push
     script: bin/docker_push.sh
   - stage: deploy
-    install: skip
     script: bin/deploy.sh
 
 notifications:
