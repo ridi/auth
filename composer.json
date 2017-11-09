@@ -26,7 +26,7 @@
     }
   },
   "scripts": {
-    "test": "phpunit -c tests/phpunit.xml",
+    "test": "phpunit",
     "cover": "coveralls -v",
     "run": "php -S localhost:8010 -t web",
     "clear": [
