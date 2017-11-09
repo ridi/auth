@@ -5,7 +5,6 @@ namespace Ridibooks\Tests\Auth\Services;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Type;
-use PHPUnit\Framework\TestCase;
 use Ridibooks\Auth\Library\MiddlewareFactory;
 use Ridibooks\Tests\Auth\OAuth2TestBase;
 use Silex\Application;

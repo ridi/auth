@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Ridibooks\Tests\Auth\Services;
 
-use Ridibooks\Auth\Services\OAuth2ClientGrantService;
-use Ridibooks\Auth\Services\OAuth2Service;
 use Ridibooks\Tests\Auth\OAuth2TestBase;
 use Symfony\Component\HttpFoundation\Response;
 

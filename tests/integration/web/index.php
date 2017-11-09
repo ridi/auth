@@ -1,16 +1,14 @@
 <?php
 declare(strict_types=1);
 
+use Ridibooks\Auth\Library\MiddlewareFactory;
 use Ridibooks\Auth\Library\UserCredentialStorage;
 use Silex\Application;
-use Ridibooks\Auth\Library\MiddlewareFactory;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 require_once __DIR__ . '/../../bootstrap.php';
 $app = require_once __DIR__ . '/../../../src/app.php';
-
-
 
 // End points for test
 
@@ -37,8 +35,6 @@ $app->match('/auth/test-resource', function (Application $app, Request $request)
         'user_idx' => $request->attributes->get('user_idx'),
     ]);
 })->before(MiddlewareFactory::validateOAuth2Token());
-
-
 
 if (isset($app['session'])) {
     $app['session']->start();

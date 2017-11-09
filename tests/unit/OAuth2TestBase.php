@@ -46,7 +46,7 @@ abstract class OAuth2TestBase extends TestCase
         return [
             'default' => [
                 'host' => $_ENV['OAUTH_DBHOST'],
-                'port' => $_ENV['OAUTH_DBPORT'],
+                'port' => (getenv('OAUTH_DBPORT') === false) ? 3306 : $_ENV['OAUTH_DBPORT'],
                 'dbname' => $_ENV['OAUTH_DBNAME'],
                 'user' => $_ENV['OAUTH_DBUSER'],
                 'password' => $_ENV['OAUTH_DBPASS'],
@@ -55,7 +55,7 @@ abstract class OAuth2TestBase extends TestCase
             ],
             'user_credential' => [
                 'host' => $_ENV['USER_DBHOST'],
-                'port' => $_ENV['USER_DBPORT'],
+                'port' => (getenv('USER_DBPORT') === false) ? 3306 : $_ENV['USER_DBPORT'],
                 'dbname' => $_ENV['USER_DBNAME'],
                 'user' => $_ENV['USER_DBUSER'],
                 'password' => $_ENV['USER_DBPASS'],
@@ -72,7 +72,8 @@ abstract class OAuth2TestBase extends TestCase
         return DriverManager::getConnection($db[$index], $config);
     }
 
-    protected static function getPDO(array $db) {
+    protected static function getPDO(array $db)
+    {
         $dsn = 'mysql:dbname=' . $db['dbname'] . ';';
         $dsn .= 'host=' . $db['host'] . ';';
         return new \PDO($dsn, $db['user'], $db['password']);

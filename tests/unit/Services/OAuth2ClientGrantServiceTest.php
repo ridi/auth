@@ -5,7 +5,6 @@ namespace Ridibooks\Tests\Auth\Services;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Type;
-use PHPUnit\Framework\TestCase;
 use Ridibooks\Auth\Services\OAuth2ClientGrantService;
 use Ridibooks\Tests\Auth\OAuth2TestBase;
 
