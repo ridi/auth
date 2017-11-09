@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class PasswordAuthController
 {
-    public function login(Request $request, Application $app)
+    public function login(Request $request, Application $app): string
     {
         $return_url = $request->get('return_url', '/');
         return $app['twig']->render('login.twig', [
@@ -19,7 +19,7 @@ class PasswordAuthController
         ]);
     }
 
-    public function loginFormSubmit(Request $request, Application $app)
+    public function loginFormSubmit(Request $request, Application $app): Response
     {
         $user_id = $request->get('user_id');
         $password_to_check = $request->get('password');
@@ -38,7 +38,7 @@ class PasswordAuthController
         return new RedirectResponse($return_url);
     }
 
-    public function logout(Application $app)
+    public function logout(Application $app): Response
     {
         $app['session']->invalidate();
         return new RedirectResponse('/');
