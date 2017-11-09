@@ -4,4 +4,12 @@
             <directory suffix="Test.php">unit</directory>
         </testsuite>
     </testsuites>
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory suffix="Test.php">unit</directory>
+        </whitelist>
+    </filter>
+    <logging>
+        <log type="coverage-clover" target="logs/clover.xml"/>
+    </logging>
 </phpunit>
