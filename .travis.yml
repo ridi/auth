@@ -4,33 +4,46 @@ dist: trusty
 language: php
 php:
 - '7.1'
+
 services:
 - docker
 - mysql
+
 before_script:
 - composer install --prefer-dist
+
 cache:
   directories:
   - "${HOME}/.cache/composer/files"
   - "${HOME}/.composer/cache/files"
+
 stages:
 - name: test
 - name: push
   if: branch = master AND type = push
 - name: deploy
   if: branch = master AND type = push
+
 jobs:
   include:
+
   - stage: test
     before_install:
     - mysql -uroot -e 'SET GLOBAL max_connections = 5000; CREATE DATABASE IF NOT EXISTS
       oauth2;'
     - npm install newman -g
     script: bin/test.sh
+    after_script:
+    - composer run-script cover
+
   - stage: push
+    before_script:
+    - composer install --prefer-dist --no-dev
     script: bin/docker_push.sh
+
   - stage: deploy
     script: bin/deploy.sh
+
 notifications:
   email: false
   slack:

@@ -12,7 +12,8 @@
   },
   "require-dev": {
     "phpunit/phpunit": "^6.3",
-    "robmorgan/phinx": "^0.8.1"
+    "robmorgan/phinx": "^0.8.1",
+    "php-coveralls/php-coveralls": "^1.0"
   },
   "autoload": {
     "psr-4": {
@@ -26,6 +27,7 @@
   },
   "scripts": {
     "test": "phpunit -c tests/phpunit.xml",
+    "cover": "coveralls -v",
     "run": "php -S localhost:8010 -t web",
     "clear": [
       "rm -rf vendor",

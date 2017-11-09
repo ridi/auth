@@ -1,7 +1,9 @@
 # Ridibooks Auth
 [![](https://images.microbadger.com/badges/version/ridibooks/auth.svg)](http://microbadger.com/images/ridibooks/auth "Get your own version badge on microbadger.com")
 [![](https://images.microbadger.com/badges/image/ridibooks/auth.svg)](http://microbadger.com/images/ridibooks/auth "Get your own version badge on microbadger.com")
-[![Build Status](https://travis-ci.org/ridi/image-optimizer.svg?branch=master)](https://travis-ci.org/ridibooks/auth)
+[![Build Status](https://travis-ci.org/ridibooks/auth.svg?branch=master)](https://travis-ci.org/ridibooks/auth?branch=master)
+[![Coverage Status](https://coveralls.io/repos/ridibooks/auth/badge.svg?branch=master)](https://coveralls.io/github/ridibooks/auth?branch=master)
+
 > The auth service of Ridibooks.
 
 OAuth2 is providing. It is implemented based on [bshaffer/oauth2-server-php](https://github.com/bshaffer/oauth2-server-php)
