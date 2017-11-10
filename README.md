@@ -1,8 +1,8 @@
 # Ridibooks Auth
-[![](https://images.microbadger.com/badges/version/ridibooks/auth.svg)](http://microbadger.com/images/ridibooks/auth "Get your own version badge on microbadger.com")
-[![](https://images.microbadger.com/badges/image/ridibooks/auth.svg)](http://microbadger.com/images/ridibooks/auth "Get your own version badge on microbadger.com")
+[![](https://images.microbadger.com/badges/version/ridibooks/auth.svg)](https://microbadger.com/images/ridibooks/auth "Get your own version badge on microbadger.com")
+[![](https://images.microbadger.com/badges/image/ridibooks/auth.svg)](https://microbadger.com/images/ridibooks/auth "Get your own image badge on microbadger.com")
 [![Build Status](https://travis-ci.org/ridibooks/auth.svg?branch=master)](https://travis-ci.org/ridibooks/auth?branch=master)
-[![Coverage Status](https://coveralls.io/repos/ridibooks/auth/badge.svg?branch=master)](https://coveralls.io/github/ridibooks/auth?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/ridibooks/auth/badge.svg?branch=master)](https://coveralls.io/github/ridibooks/auth?branch=master)
 
 > The auth service of Ridibooks.
 
