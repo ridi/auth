@@ -30,7 +30,7 @@ jobs:
   - stage: test
     before_install:
     - mysql -uroot -e 'SET GLOBAL max_connections = 5000; CREATE DATABASE IF NOT EXISTS oauth2;'
-    - npm install newman -g
+    - npm install -g newman@3.8.1
     script: bin/test.sh
     after_script:
     - composer run-script cover
