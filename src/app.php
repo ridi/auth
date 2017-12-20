@@ -41,7 +41,7 @@ $app->register(new OAuth2ServiceProvider(), [
             'password' => $_ENV['USER_DBPASS'],
             'driver' => 'pdo_mysql',
             'charset' => 'utf8',
-        ]
+        ],
     ]
 ]);
 

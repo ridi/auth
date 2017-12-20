@@ -1280,6 +1280,116 @@
 									"_postman_isSubFolder": true
 								},
 								{
+									"name": "client credentials 방식",
+									"description": "",
+									"item": [
+										{
+											"name": "401: 잘못된 client 인증",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(400);",
+															"",
+															"const jsonData = JSON.parse(responseBody);",
+															"tests[\"error exists\"] = jsonData.error === 'invalid_client';",
+															"tests[\"error_description exists\"] = jsonData.error_description === \"The client credentials are invalid\";"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": "{{prefix}}/oauth2/token",
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "grant_type",
+															"type": "text",
+															"value": "client_credentials"
+														},
+														{
+															"description": "",
+															"key": "client_id",
+															"type": "text",
+															"value": "{{client_id}}"
+														},
+														{
+															"description": "",
+															"key": "client_secret",
+															"type": "text",
+															"value": "wrong_client_secret"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										},
+										{
+											"name": "200: token 발급 성공",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(200);",
+															"",
+															"const jsonData = JSON.parse(responseBody);",
+															"tests[\"access_token exists\"] = jsonData.access_token;",
+															"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
+															"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
+															"",
+															"postman.setGlobalVariable('access_token', jsonData.access_token);"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": "{{prefix}}/oauth2/token",
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "grant_type",
+															"type": "text",
+															"value": "client_credentials"
+														},
+														{
+															"description": "",
+															"key": "client_id",
+															"type": "text",
+															"value": "{{client_id}}"
+														},
+														{
+															"description": "",
+															"key": "client_secret",
+															"type": "text",
+															"value": "{{client_secret}}"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										}
+									],
+									"_postman_isSubFolder": true
+								},
+								{
 									"name": "user credentials 방식",
 									"description": "",
 									"item": [
@@ -1777,7 +1887,7 @@
 							"description": "",
 							"item": [
 								{
-									"name": "# 준비: token 발급",
+									"name": "# 준비: user credentials 방식으로 token 발급",
 									"event": [
 										{
 											"listen": "test",
