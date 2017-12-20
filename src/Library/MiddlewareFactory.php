@@ -19,8 +19,9 @@ class MiddlewareFactory
                 return $oauth2_service->getResponse();
             }
 
-            $request->attributes->set('user_idx', $token_data['user_id']);
-            $request->attributes->set('client_id', $token_data['client_id']);
+            $request->attributes->set('user_idx', $token_data['user_id'] ?? null);
+            $request->attributes->set('client_id', $token_data['client_id'] ?? null);
+
             return null;
         };
     }

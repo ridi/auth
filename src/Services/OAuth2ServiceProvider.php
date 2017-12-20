@@ -6,6 +6,7 @@ namespace Ridibooks\Auth\Services;
 use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\DriverManager;
 use OAuth2\GrantType\AuthorizationCode;
+use OAuth2\GrantType\ClientCredentials;
 use OAuth2\GrantType\RefreshToken;
 use OAuth2\GrantType\UserCredentials;
 use OAuth2\Server as OAuth2Server;
@@ -66,6 +67,7 @@ class OAuth2ServiceProvider implements ServiceProviderInterface
             ]);
 
             $server->addGrantType(new AuthorizationCode($storage['authorization_code']));
+            $server->addGrantType(new ClientCredentials($storage['client_credentials']));
             $server->addGrantType(new UserCredentials($storage['user_credentials']));
             $server->addGrantType(new RefreshToken($storage['refresh_token'], [
                 'always_issue_new_refresh_token' => true
