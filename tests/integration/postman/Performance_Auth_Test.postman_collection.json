@@ -1777,7 +1777,7 @@
 							"_postman_isSubFolder": true
 						},
 						{
-							"name": "/token_info: token 정보 출력",
+							"name": "/tokeninfo: token 정보 출력",
 							"description": "",
 							"item": [
 								{
