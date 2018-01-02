@@ -5,6 +5,7 @@ namespace Ridibooks\Auth\Controller;
 
 use Ridibooks\Auth\Services\OAuth2Service;
 use Silex\Application;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
 class OAuth2Controller
@@ -59,6 +60,24 @@ class OAuth2Controller
         /** @var OAuth2Service $oauth2_service */
         $oauth2_service = $app['oauth2'];
         return $oauth2_service->handleTokenRequest($request);
+    }
+
+    public function tokenInfo(Request $request, Application $app)
+    {
+        /** @var OAuth2Service $oauth2_service */
+        $oauth2_service = $app['oauth2'];
+        $token_data = $oauth2_service->getTokenData($request);
+        if (!$token_data) {
+            return $oauth2_service->getResponse();
+        }
+
+        return JsonResponse::create([
+            'token_type' => $token_data['token_type'],
+            'client_id' => $token_data['client_id'],
+            'user_idx' => $token_data['user_id'],
+            'scope' => $token_data['scope'],
+            'expires' => $token_data['expires'],
+        ]);
     }
 
     public function revoke(Request $request, Application $app)

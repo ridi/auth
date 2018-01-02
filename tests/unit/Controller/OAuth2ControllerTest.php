@@ -128,6 +128,35 @@ class OAuth2ControllerTest extends ControllerTestBase
         $controller->token($mock_request, $this->test_app);
     }
 
+    public function testTokenInfo()
+    {
+        $mock_request = $this->createMockObject('\Symfony\Component\HttpFoundation\Request');
+        $mock_token_data = [
+            'token_type' => 'bearer',
+            'client_id' => 1,
+            'user_id' => 1,
+            'scope' => null,
+            'expires' => 1515476387
+        ];
+
+        $mock_oauth2 = $this->createMockObject('\Ridibooks\Auth\Services\OAuth2Service', [
+            'getTokenData' => [
+                [$mock_request, $mock_token_data]
+            ],
+        ]);
+        $this->setOAuth2($mock_oauth2);
+
+        $controller = new OAuth2Controller();
+        $actual = $controller->tokenInfo($mock_request, $this->test_app);
+        $json_response = json_decode($actual->getContent(), true);
+
+        $this->assertEquals($mock_token_data['token_type'], $json_response['token_type']);
+        $this->assertEquals($mock_token_data['client_id'], $json_response['client_id']);
+        $this->assertEquals($mock_token_data['user_id'], $json_response['user_idx']);
+        $this->assertEquals($mock_token_data['scope'], $json_response['scope']);
+        $this->assertEquals($mock_token_data['expires'], $json_response['expires']);
+    }
+
     public function testRevoke()
     {
         $mock_request = $this->createMockObject('\Symfony\Component\HttpFoundation\Request');

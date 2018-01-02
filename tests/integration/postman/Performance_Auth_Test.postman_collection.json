@@ -1777,6 +1777,62 @@
 							"_postman_isSubFolder": true
 						},
 						{
+							"name": "/token_info: token 정보 출력",
+							"description": "",
+							"item": [
+								{
+									"name": "200: token 정보 출력",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
+													"tests[\"client_id exists\"] = jsonData.client_id === pm.environment.get('client_id');",
+													"tests[\"expires exists\"] = jsonData.expires;",
+													"tests[\"user_idx exists\"] = jsonData.user_idx === pm.environment.get('user_idx');",
+													""
+												]
+											}
+										}
+									],
+									"request": {
+										"url": {
+											"raw": "{{prefix}}/oauth2/tokeninfo?access_token={{access_token}}",
+											"host": [
+												"{{prefix}}"
+											],
+											"path": [
+												"oauth2",
+												"tokeninfo"
+											],
+											"query": [
+												{
+													"key": "access_token",
+													"value": "{{access_token}}",
+													"equals": true,
+													"description": ""
+												}
+											],
+											"variable": []
+										},
+										"method": "POST",
+										"header": [],
+										"body": {},
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
 							"name": "/revoke: token 무효화",
 							"description": "",
 							"item": [
