@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace Ridibooks\Auth\Library;
 
+use Ridibooks\Auth\Services\OAuth2Service;
 use Silex\Application;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,15 +15,25 @@ class MiddlewareFactory
     public static function validateOAuth2Token(): \Closure
     {
         return function (Request $request, Application $app) {
+            // Verify token
+            /* @var $oauth2_service OAuth2Service */
             $oauth2_service = $app['oauth2'];
-            $token_data = $oauth2_service->getTokenData($request);
-            if (!$token_data) {
+            if (!$oauth2_service->verifyResourceRequest($request)) {
                 return $oauth2_service->getResponse();
             }
 
-            $request->attributes->set('user_idx', $token_data['user_id'] ?? null);
-            $request->attributes->set('client_id', $token_data['client_id'] ?? null);
+            // Check revoked
+            $token_param = $oauth2_service->getTokenParam($request);
+            $token_data = $oauth2_service->getIntrospect($token_param);
+            if ($token_data['active'] === false) {
+                return JsonResponse::create([
+                    'error' => 'invalid_token',
+                    'error_description' => 'The access token provided is invalid',
+                ], Response::HTTP_UNAUTHORIZED);
+            }
 
+            $request->attributes->set('user_idx', $token_data['sub'] ?? null);
+            $request->attributes->set('client_id', $token_data['aud'] ?? null);
             return null;
         };
     }

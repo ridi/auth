@@ -62,22 +62,14 @@ class OAuth2Controller
         return $oauth2_service->handleTokenRequest($request);
     }
 
-    public function tokenInfo(Request $request, Application $app)
+    public function tokenIntrospect(Request $request, Application $app)
     {
+        $token_param = $request->get('token');
+
         /** @var OAuth2Service $oauth2_service */
         $oauth2_service = $app['oauth2'];
-        $token_data = $oauth2_service->getTokenData($request);
-        if (!$token_data) {
-            return $oauth2_service->getResponse();
-        }
-
-        return JsonResponse::create([
-            'token_type' => $token_data['token_type'],
-            'client_id' => $token_data['client_id'],
-            'user_idx' => $token_data['user_id'],
-            'scope' => $token_data['scope'],
-            'expires' => $token_data['expires'],
-        ]);
+        $instrospect = $oauth2_service->getIntrospect($token_param);
+        return JsonResponse::create($instrospect);
     }
 
     public function revoke(Request $request, Application $app)
