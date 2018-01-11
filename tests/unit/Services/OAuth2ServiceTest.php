@@ -3,25 +3,23 @@ declare(strict_types=1);
 
 namespace Ridibooks\Tests\Auth\Services;
 
-use Ridibooks\Tests\Auth\OAuth2TestBase;
+use Ridibooks\Tests\Auth\OAuth2ServiceTestBase;
 use Symfony\Component\HttpFoundation\Response;
 
-class OAuth2ServiceTest extends OAuth2TestBase
+class OAuth2ServiceTest extends OAuth2ServiceTestBase
 {
-    public function setUp()
+    protected function setUp()
     {
-        self::createClient();
         self::createAuthorizeCode();
         self::createToken();
         self::createRefreshToken();
     }
 
-    public function tearDown()
+    protected function tearDown()
     {
         self::cleanRefreshTokens();
         self::cleanTokens();
         self::cleanAuthorizeCodes();
-        self::cleanClient();
     }
 
     /**
@@ -31,7 +29,7 @@ class OAuth2ServiceTest extends OAuth2TestBase
     {
         $request = $this->createAuthorizeRequest($param);
 
-        $service = $this->createOAuth2Service();
+        $service = $this->createOAuth2Service(false);
         $actual = $service->validateAuthorizeRequest($request);
         $this->assertSame($expected, $actual);
     }
@@ -85,7 +83,7 @@ class OAuth2ServiceTest extends OAuth2TestBase
         $request = $this->createAuthorizeRequest($param['request']);
 
         /* @var Response $response */
-        $service = $this->createOAuth2Service();
+        $service = $this->createOAuth2Service(false);
         $response = $service->handleAuthorizeRequest($request, $param['user_id'], $param['is_authorized']);
 
         $actual_redirect = $response->headers->get('location');
@@ -175,7 +173,7 @@ class OAuth2ServiceTest extends OAuth2TestBase
         $request = $this->createTokenRequestWithAuthorizationCode($param);
 
         /* @var Response $response */
-        $service = $this->createOAuth2Service();
+        $service = $this->createOAuth2Service(false);
         $response = $service->handleTokenRequest($request);
         $actual = json_decode((string) $response->getContent(), true);
 
@@ -296,7 +294,7 @@ class OAuth2ServiceTest extends OAuth2TestBase
         $request = $this->createTokenRequestWithUserCredentials($param);
 
         /* @var Response $response */
-        $service = $this->createOAuth2Service();
+        $service = $this->createOAuth2Service(false);
         $response = $service->handleTokenRequest($request);
         $actual = json_decode((string) $response->getContent(), true);
 
@@ -403,7 +401,7 @@ class OAuth2ServiceTest extends OAuth2TestBase
         $request = $this->createTokenRequestWithRefreshToken($param);
 
         /* @var Response $response */
-        $service = $this->createOAuth2Service();
+        $service = $this->createOAuth2Service(false);
         $response = $service->handleTokenRequest($request);
         $actual = json_decode((string) $response->getContent(), true);
 
@@ -496,50 +494,118 @@ class OAuth2ServiceTest extends OAuth2TestBase
     }
 
     /**
-     * @dataProvider getTokenDataProvider
+     * @dataProvider getIntrospectProvider
      */
-    public function testGetTokenData($access_token, $expected)
+    public function testGetIntrospect($access_token, $token_data, $expected)
     {
-        $request = $this->createResourceRequest($access_token);
+        $mock_storage = $this->createMockObject('\OAuth2\Storage\AccessTokenInterface', [
+            'getAccessToken' => [
+                ['input' => $access_token, 'output' => $token_data]
+            ],
+        ]);
 
-        $service = $this->createOAuth2Service();
-        $actual = $service->getTokenData($request);
+        $service = $this->createOAuth2Service(false);
+        $service->setTokenStorage($mock_storage);
 
-        $this->assertSame($expected['data_exists'], !empty($actual));
-        if ($actual) {
-            $this->assertSame($expected['access_token'], empty($actual['access_token']) ? null : $actual['access_token']);
-            $this->assertSame($expected['client_id'], empty($actual['client_id']) ? null : $actual['client_id']);
-            $this->assertSame($expected['user_id'], empty($actual['user_id']) ? null : $actual['user_id']);
-            $this->assertSame($expected['expires'], empty($actual['expires']) ? null : $actual['expires']);
-        }
+        $actual = $service->getIntrospect($access_token);
+
+        $this->assertSame($expected['active'], $actual['active']);
+        $this->assertSame($expected['scope']?? null, $actual['scope']?? null);
+        $this->assertSame($expected['client_id']?? null, $actual['aud']?? null);
+        $this->assertSame($expected['exp']?? null, $actual['exp']?? null);
+        $this->assertSame($expected['token_type']?? null, $actual['token_type']?? null);
+        $this->assertSame($expected['iat']?? null, $actual['iat']?? null);
+        $this->assertSame($expected['sub']?? null, $actual['sub']?? null);
+        $this->assertSame($expected['aud']?? null, $actual['aud']?? null);
+        $this->assertSame($expected['iss']?? null, $actual['iss']?? null);
     }
 
-    public function getTokenDataProvider()
+    public function getIntrospectProvider()
     {
-        $default_expected = [
-            'data_exists' => true,
-            'access_token' => self::ACCESS_TOKEN,
-            'client_id' => self::CLIENT_ID,
-            'user_id' => strval(self::USER_IDX),
-            'expires' => 1577836800,
-        ];
+        $payload = $this->createMockIntropect();
 
         return [
             'normal' => [
                 self::ACCESS_TOKEN,
-                $default_expected,
+                $this->createMockOAuth2Data(),
+                array_merge($payload, [
+                    'active' => true,
+                    'client_id' => $payload['aud'],
+                ]),
             ],
-            'empty token' => [
-                null,
-                ['data_exists' => false],
+            'expired' => [
+                self::ACCESS_TOKEN,
+                array_merge($this->createMockOAuth2Data(), [
+                    'expires' => '1500000000',
+                ]),
+                [
+                    'active' => false,
+                ],
             ],
-            'wrong token' => [
-                'wrong token',
-                ['data_exists' => false],
+        ];
+    }
+
+    /**
+     * @dataProvider getIntrospectWithJWTProvider
+     */
+    public function testGetIntrospectWithJWT($access_token, $expected)
+    {
+        $payload = $this->createMockJWTOAuth2Data(true);
+        $mock_storage = $this->createMockObject('\OAuth2\Storage\AccessTokenInterface', [
+            'getAccessToken' => [
+                ['input' => $access_token, 'output' => $payload]
             ],
-            'expired token' => [
-                self::ACCESS_TOKEN_EXPIRED,
-                ['data_exists' => false],
+        ]);
+
+        $service = $this->createOAuth2Service(true);
+        $service->setTokenStorage($mock_storage);
+
+        $actual = $service->getIntrospectWithJWT($access_token);
+
+        $this->assertSame($expected['active'], $actual['active']);
+        $this->assertSame($expected['scope']?? null, $actual['scope']?? null);
+        $this->assertSame($expected['client_id']?? null, $actual['aud']?? null);
+        $this->assertSame($expected['token_type']?? null, $actual['token_type']?? null);
+        $this->assertSame($expected['exp']?? null, $actual['exp']?? null);
+        $this->assertSame($expected['iat']?? null, $actual['iat']?? null);
+        $this->assertSame($expected['sub']?? null, $actual['sub']?? null);
+        $this->assertSame($expected['aud']?? null, $actual['aud']?? null);
+        $this->assertSame($expected['iss']?? null, $actual['iss']?? null);
+    }
+
+    public function getIntrospectWithJWTProvider()
+    {
+        $expired_payload = [
+            'iat' => 9800000000,
+            'exp' => 9900000000,
+        ];
+
+        $before_issued_payload = [
+            'iat' => 1000000000,
+            'exp' => 1000000001,
+        ];
+
+        $payload = $this->createMockJWTIntropect(true);
+
+        return [
+            'normal' => [
+                $this->createMockJwt(),
+                array_merge($payload, [
+                    'active' => true,
+                    'client_id' => $payload['aud'],
+                ]),
+            ],
+            'expired' => [
+                $this->createMockJwt($expired_payload),
+                [
+                    'active' => false,
+                ],
+            ],
+            'before issued' => [
+                $this->createMockJwt($before_issued_payload),
+                [
+                    'active' => false,
+                ],
             ],
         ];
     }
@@ -552,7 +618,7 @@ class OAuth2ServiceTest extends OAuth2TestBase
         $request = $this->createRevokeRequest($param);
 
         /* @var Response $response */
-        $service = $this->createOAuth2Service();
+        $service = $this->createOAuth2Service(false);
         $response = $service->handleRevokeRequest($request);
         $actual = json_decode((string) $response->getContent(), true);
 

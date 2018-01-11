@@ -3,15 +3,13 @@ declare(strict_types=1);
 
 namespace Ridibooks\Tests\Auth;
 
-use PHPUnit\Framework\TestCase;
-
-abstract class ControllerTestBase extends TestCase
+abstract class ControllerTestBase extends TestBase
 {
     protected $test_app;
     protected $test_user;
     protected $test_client_id;
 
-    public function setUp()
+    protected function setUp()
     {
         $this->test_app = require __DIR__ . '/../../src/app.php';
         $this->test_user = [
@@ -21,38 +19,6 @@ abstract class ControllerTestBase extends TestCase
             'passwd' => 'test_passwd'
         ];
         $this->test_client_id = 'test_client_id';
-    }
-
-    protected function createMockObject($class_name, $param = null)
-    {
-        $mock = $this->getMockBuilder($class_name)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $at = 0;
-        if (isset($param)) {
-            foreach ($param as $method_name => $input_outputs) {
-                for ($i = 0; $i < count($input_outputs); ++$i) {
-                    $method = $mock->expects($this->at($at))->method($method_name);
-                    ++$at;
-                    $input = $input_outputs[$i][0];
-                    if ($input !== null) {
-                        if (is_array($input)) {
-                            $method = $method->with(...$input);
-                        } else {
-                            $method = $method->with($input);
-                        }
-                    }
-
-                    $output = $input_outputs[$i][1];
-                    if ($output !== null) {
-                        $method->will($this->returnValue($output));
-                    }
-                }
-            }
-        }
-
-        return $mock;
     }
 
     protected function setOAuth2($oauth2)

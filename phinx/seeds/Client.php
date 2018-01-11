@@ -9,8 +9,18 @@ class Client extends AbstractSeed
     {
         $data = [
             [
-                'client_id' => 'democlient',
-                'client_secret' => 'democlient_pass',
+                'client_id' => 'test_client',
+                'client_secret' => 'test_client_pass',
+                'redirect_uri' => 'http://fake.com/receive',
+            ],
+            [
+                'client_id' => 'test_client_rs256_jwt',
+                'client_secret' => 'test_client_pass_rs256_jwt',
+                'redirect_uri' => 'http://fake.com/receive',
+            ],
+            [
+                'client_id' => 'test_client_hs256_jwt',
+                'client_secret' => 'test_client_pass_hs256_jwt',
                 'redirect_uri' => 'http://fake.com/receive',
             ],
         ];

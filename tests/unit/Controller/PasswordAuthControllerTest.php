@@ -21,7 +21,7 @@ class PasswordAuthControllerTest extends ControllerTestBase
     {
         $mock_request = $this->createMockObject('\Symfony\Component\HttpFoundation\Request', [
             'get' => [
-                ['return_url', $this->test_return_url]
+                ['input' => 'return_url', 'output' => $this->test_return_url]
             ]
         ]);
 
@@ -35,27 +35,27 @@ class PasswordAuthControllerTest extends ControllerTestBase
     {
         $mock_request = $this->createMockObject('\Symfony\Component\HttpFoundation\Request', [
             'get' => [
-                ['user_id', $this->test_user['id']],
-                ['password', $this->test_user['passwd']],
-                ['return_url', $this->test_return_url],
+                ['input' => 'user_id', 'output' => $this->test_user['id']],
+                ['input' => 'password', 'output' => $this->test_user['passwd']],
+                ['input' => 'return_url', 'output' => $this->test_return_url],
             ]
         ]);
 
         $mock_session = $this->createMockObject('\Symfony\Component\HttpFoundation\Session\Session', [
             'set' => [
-                ['user_idx', $this->test_user['idx']],
-                ['user_id', $this->test_user['id']],
-                ['user_name', $this->test_user['name']],
+                ['input' => 'user_idx', 'output' => $this->test_user['idx']],
+                ['input' => 'user_id', 'output' => $this->test_user['id']],
+                ['input' => 'user_name', 'output' => $this->test_user['name']],
             ]
         ]);
         $this->setSession($mock_session);
 
         $mock_storage = $this->createMockObject('\Ridibooks\Auth\Library\UserCredentialStorage', [
             'checkUserCredentials' => [
-                [null, true]
+                ['input' => null, 'output' => true]
             ],
             'getUserDetails' => [
-                [null, $this->test_user]
+                ['input' => null, 'output' => $this->test_user]
             ],
         ]);
         $this->setUserCredentialStorage($mock_storage);
@@ -72,7 +72,7 @@ class PasswordAuthControllerTest extends ControllerTestBase
     {
         $mock_session = $this->createMockObject('\Symfony\Component\HttpFoundation\Session\Session', [
             'invalidate' => [
-                [null, null]
+                ['input' => null, 'output' => null]
             ]
         ]);
         $this->setSession($mock_session);

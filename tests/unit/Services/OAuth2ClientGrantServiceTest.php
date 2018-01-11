@@ -6,9 +6,9 @@ namespace Ridibooks\Tests\Auth\Services;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Type;
 use Ridibooks\Auth\Services\OAuth2ClientGrantService;
-use Ridibooks\Tests\Auth\OAuth2TestBase;
+use Ridibooks\Tests\Auth\OAuth2ServiceTestBase;
 
-class OAuth2ClientGrantServiceTest extends OAuth2TestBase
+class OAuth2ClientGrantServiceTest extends OAuth2ServiceTestBase
 {
     const CLIENT_ID_OLD = 'test_client_id_old';
     const CLIENT_ID_NEW = 'test_client_id_new';
@@ -16,12 +16,12 @@ class OAuth2ClientGrantServiceTest extends OAuth2TestBase
     const USER_IDX_NEW = 22222222;
     const TABLE_NAME = 'oauth_client_grants';
 
-    protected function setUp()
+    public function setUp()
     {
         static::createClientGrant();
     }
 
-    protected function tearDown()
+    public function tearDown()
     {
         static::cleanClientGrant();
     }
