@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Ridibooks\Tests\Auth;
 
 use Doctrine\DBAL\Configuration;
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Types\Type;
 use OAuth2\Encryption\Jwt;
@@ -26,6 +27,8 @@ abstract class OAuth2ServiceTestBase extends TestBase
     const RESOURCE_PATH = 'http://ridibooks.com/api/some/resource';
 
     const CLIENT_ID = 'test_client';
+    const CLIENT_ID_OLD = 'test_client_id_old';
+    const CLIENT_ID_NEW = 'test_client_id_new';
     const CLIENT_SECRET = 'test_client_pass';
     const CLIENT_ID_RS256_JWT = 'test_client_rs256_jwt';
     const CLIENT_SECRET_RS256_JWT = 'test_client_pass_rs256_jwt';
@@ -35,8 +38,10 @@ abstract class OAuth2ServiceTestBase extends TestBase
 
     const AUTHORIZE_STATE = 'test_state';
 
-    const USER_IDX = 1;
     const USER_ID = 'testuser';
+    const USER_IDX = 1;
+    const USER_IDX_OLD = 11111111;
+    const USER_IDX_NEW = 22222222;
     const USER_PASS = '112233';
 
     const AUTHORIZE_CODE = 'test_authorize_code';
@@ -166,6 +171,31 @@ abstract class OAuth2ServiceTestBase extends TestBase
                 'redirect_uri' => self::CLIENT_REDIRECT_URI,
             ],
             [Type::STRING, Type::STRING, Type::STRING]
+        );
+    }
+
+    protected static function createClientGrant()
+    {
+        self::cleanClientGrant();
+
+        $db = self::getConnection('default');
+        $db->insert(
+            'oauth_client_grants',
+            [
+                'user_idx' => self::USER_IDX_OLD,
+                'client_id' => self::CLIENT_ID_OLD,
+            ],
+            [Type::INTEGER, Type::STRING]
+        );
+    }
+
+    protected static function cleanClientGrant()
+    {
+        $db = self::getConnection('default');
+        $db->executeQuery(
+            "DELETE FROM oauth_client_grants WHERE user_idx IN (?)",
+            [[self::USER_IDX_OLD, self::USER_IDX_NEW]],
+            [Connection::PARAM_STR_ARRAY]
         );
     }
 
@@ -304,6 +334,42 @@ abstract class OAuth2ServiceTestBase extends TestBase
             ],
             [Type::STRING]
         );
+    }
+
+    protected function getAuthorizationCodes($user_idx, $client_id)
+    {
+        $db = self::getConnection('default');
+        $rows = $db->fetchAll(
+            "SELECT * FROM oauth_authorization_codes WHERE user_id=? AND client_id=?",
+            [$user_idx, $client_id],
+            [Type::INTEGER, Type::STRING]
+        );
+
+        return $rows;
+    }
+
+    protected function getAccessTokens($user_idx, $client_id)
+    {
+        $db = self::getConnection('default');
+        $rows = $db->fetchAll(
+            "SELECT * FROM oauth_access_tokens WHERE user_id=? AND client_id=?",
+            [$user_idx, $client_id],
+            [Type::INTEGER, Type::STRING]
+        );
+
+        return $rows;
+    }
+
+    protected function getClientGrants($user_idx, $client_id)
+    {
+        $db = self::getConnection('default');
+        $rows = $db->fetchAll(
+            "SELECT * FROM oauth_client_grants WHERE user_idx=? AND client_id=? AND deleted_at is null",
+            [$user_idx, $client_id],
+            [Type::INTEGER, Type::STRING]
+        );
+
+        return $rows;
     }
 
     protected function createAuthorizeRequest($param = []): Request

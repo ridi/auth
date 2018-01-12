@@ -13,10 +13,12 @@ class OAuth2ServiceTest extends OAuth2ServiceTestBase
         self::createAuthorizeCode();
         self::createToken();
         self::createRefreshToken();
+        self::createClientGrant();
     }
 
     protected function tearDown()
     {
+        self::cleanClientGrant();
         self::cleanRefreshTokens();
         self::cleanTokens();
         self::cleanAuthorizeCodes();
@@ -494,6 +496,55 @@ class OAuth2ServiceTest extends OAuth2ServiceTestBase
     }
 
     /**
+     * @dataProvider handleRevokeRequestProvider
+     */
+    public function testHandleRevokeRequest($param, $expected)
+    {
+        $request = $this->createRevokeRequest($param);
+
+        /* @var Response $response */
+        $service = $this->createOAuth2Service(false);
+        $response = $service->handleRevokeRequest($request);
+        $actual = json_decode((string) $response->getContent(), true);
+
+        $this->assertSame($expected['revoked'], empty($actual['revoked']) ? null : $actual['revoked']);
+    }
+
+    public function handleRevokeRequestProvider()
+    {
+        $default_expected = [
+            'revoked' => true,
+        ];
+
+        return [
+            'access token type' => [
+                [],
+                $default_expected,
+            ],
+            'refresh token type' => [
+                ['token_type_hint' => 'refresh_token'],
+                $default_expected,
+            ],
+            'empty token type hint' => [
+                ['token_type_hint' => null],
+                $default_expected,
+            ],
+            'wrong token type hint' => [
+                ['token_type_hint' => 'wrong_token_type'],
+                ['revoked' => null],
+            ],
+            'empty token' => [
+                ['token' => null],
+                ['revoked' => null],
+            ],
+            'wrong token' => [
+                ['token' => 'wrong_token'],
+                $default_expected,
+            ],
+        ];
+    }
+
+    /**
      * @dataProvider getIntrospectProvider
      */
     public function testGetIntrospect($access_token, $token_data, $expected)
@@ -611,51 +662,73 @@ class OAuth2ServiceTest extends OAuth2ServiceTestBase
     }
 
     /**
-     * @dataProvider handleRevokeRequestProvider
+     * @dataProvider isGrantedClientProvider
      */
-    public function testHandleRevokeRequest($param, $expected)
+    public function testIsGrantedClient($user_id, $client_id, $expected)
     {
-        $request = $this->createRevokeRequest($param);
-
-        /* @var Response $response */
         $service = $this->createOAuth2Service(false);
-        $response = $service->handleRevokeRequest($request);
-        $actual = json_decode((string) $response->getContent(), true);
+        $actual = $service->isGrantedClient($user_id, $client_id);
 
-        $this->assertSame($expected['revoked'], empty($actual['revoked']) ? null : $actual['revoked']);
+        $this->assertSame($expected, $actual);
     }
 
-    public function handleRevokeRequestProvider()
+    public function isGrantedClientProvider()
     {
-        $default_expected = [
-            'revoked' => true,
-        ];
-
         return [
-            'access token type' => [
-                [],
-                $default_expected,
-            ],
-            'refresh token type' => [
-                ['token_type_hint' => 'refresh_token'],
-                $default_expected,
-            ],
-            'empty token type hint' => [
-                ['token_type_hint' => null],
-                $default_expected,
-            ],
-            'wrong token type hint' => [
-                ['token_type_hint' => 'wrong_token_type'],
-                ['revoked' => null],
-            ],
-            'empty token' => [
-                ['token' => null],
-                ['revoked' => null],
-            ],
-            'wrong token' => [
-                ['token' => 'wrong_token'],
-                $default_expected,
-            ],
+            'Granted' => [self::USER_IDX_OLD, self::CLIENT_ID_OLD, true],
+            'Not granted (user_id not exists)' => [self::USER_IDX_NEW, self::CLIENT_ID_OLD, false],
+            'Not granted (client_id not exists)' => [self::USER_IDX_OLD, self::CLIENT_ID_NEW, false],
+            'Not granted (user_id and client_id not exists)' => [self::USER_IDX_NEW, self::CLIENT_ID_NEW, false],
+        ];
+    }
+
+    /**
+     * @dataProvider grantProvider
+     */
+    public function testGrant($user_idx, $client_id, $expected)
+    {
+        $service = $this->createOAuth2Service(false);
+        $service->grant($user_idx, $client_id);
+        $grants = $this->getClientGrants($user_idx, $client_id);
+        $actual = count($grants);
+        $this->assertSame($expected, $actual);
+    }
+
+    public function grantProvider()
+    {
+        return [
+            'Grant successfully' => [self::USER_IDX_NEW, self::CLIENT_ID_NEW, 1],
+            'Not changed (old user_id, old client_id pair)' => [self::USER_IDX_OLD, self::CLIENT_ID_OLD, 1],
+            'Grant successfully (new client_id with old user_id)' => [self::USER_IDX_OLD, self::CLIENT_ID_NEW, 1],
+            'Grant successfully (new user_id with old client_id)' => [self::USER_IDX_NEW, self::CLIENT_ID_OLD, 1],
+        ];
+    }
+
+    /**
+     * @dataProvider denyProvider
+     */
+    public function testDeny($user_idx, $client_id, $expected)
+    {
+        $service = $this->createOAuth2Service(false);
+        $service->deny($user_idx, $client_id);
+        $grants = $this->getClientGrants(self::USER_IDX_OLD, self::CLIENT_ID_OLD);
+        $actual = count($grants);
+        $this->assertSame($expected, $actual);
+
+        $codes = $this->getAuthorizationCodes($user_idx, $client_id);
+        $this->assertSame(0, count($codes));
+
+        $tokens = $this->getAccessTokens($user_idx, $client_id);
+        $this->assertSame(0, count($tokens));
+    }
+
+    public function denyProvider()
+    {
+        return [
+            'Deny successfully' => [self::USER_IDX_OLD, self::CLIENT_ID_OLD, 0],
+            'Not denied (wrong user_idx and client_id)' => [self::USER_IDX_NEW, self::CLIENT_ID_NEW, 1],
+            'Not denied (wront client_id only)' => [self::USER_IDX_OLD, self::CLIENT_ID_NEW, 1],
+            'Not denied (wront user_idx only)' => [self::USER_IDX_NEW, self::CLIENT_ID_OLD, 1],
         ];
     }
 }
