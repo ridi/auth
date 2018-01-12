@@ -55,8 +55,8 @@ class OAuth2ServiceProviderTest extends OAuth2ServiceTestBase
         $this->assertArrayHasKey('oauth2.server', $app);
         $this->assertInstanceOf('\OAuth2\Server', $app['oauth2.server']);
 
-        $this->assertArrayHasKey('oauth2.link_state', $app);
-        $this->assertInstanceOf('\Ridibooks\Auth\Services\OAuth2ClientGrantService', $app['oauth2.link_state']);
+        $this->assertArrayHasKey('oauth2.client_grant', $app);
+        $this->assertInstanceOf('\Ridibooks\Auth\Services\OAuth2ClientGrantService', $app['oauth2.client_grant']);
 
         $this->assertArrayHasKey('oauth2', $app);
         $this->assertInstanceOf('\Ridibooks\Auth\Services\OAuth2Service', $app['oauth2']);

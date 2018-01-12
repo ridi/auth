@@ -21,14 +21,14 @@ class OAuth2Service
     /** @var OAuth2Server $server */
     private $server;
 
-    /** @var OAuth2ClientGrantService $link_state */
-    private $link_state;
+    /** @var OAuth2ClientGrantService $client_grant */
+    private $client_grant;
 
-    public function __construct(Connection $connection, OAuth2Server $server, OAuth2ClientGrantService $link_state)
+    public function __construct(Connection $connection, OAuth2Server $server, OAuth2ClientGrantService $client_grant)
     {
         $this->connection = $connection;
         $this->server = $server;
-        $this->link_state = $link_state;
+        $this->client_grant = $client_grant;
     }
 
     public function setTokenStorage($storage)
@@ -198,17 +198,17 @@ class OAuth2Service
 
     public function isGrantedClient(int $user_id, string $client_id): bool
     {
-        return $this->link_state->isGrantedClient($user_id, $client_id);
+        return $this->client_grant->isGrantedClient($user_id, $client_id);
     }
 
     public function grant(int $user_id, string $client_id)
     {
-        $this->link_state->grant($user_id, $client_id);
+        $this->client_grant->grant($user_id, $client_id);
     }
 
     public function deny(int $user_id, string $client_id)
     {
-        $this->link_state->deny($user_id, $client_id);
+        $this->client_grant->deny($user_id, $client_id);
         $this->revokeAllAuthorizationCode($user_id, $client_id);
         $this->revokeAllToken($user_id, $client_id);
     }

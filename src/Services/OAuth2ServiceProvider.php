@@ -73,14 +73,14 @@ class OAuth2ServiceProvider implements ServiceProviderInterface
             return $server;
         };
 
-        $app['oauth2.link_state'] = function ($app) {
+        $app['oauth2.client_grant'] = function ($app) {
             $connection = $this->getConnection($app['oauth2.db']['default']);
             return new OAuth2ClientGrantService($connection);
         };
 
         $app['oauth2'] = function ($app) {
             $connection = $this->getConnection($app['oauth2.db']['default']);
-            return new OAuth2Service($connection, $app['oauth2.server'], $app['oauth2.link_state']);
+            return new OAuth2Service($connection, $app['oauth2.server'], $app['oauth2.client_grant']);
         };
     }
 }

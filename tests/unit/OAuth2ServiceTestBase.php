@@ -126,8 +126,8 @@ abstract class OAuth2ServiceTestBase extends TestBase
     {
         $server = $this->createOAuth2Server($use_jwt);
         $connection = self::getConnection('default');
-        $link_state = new OAuth2ClientGrantService($connection);
-        return new OAuth2Service($connection, $server, $link_state);
+        $client_grant = new OAuth2ClientGrantService($connection);
+        return new OAuth2Service($connection, $server, $client_grant);
     }
 
     protected function createStorage(): array
