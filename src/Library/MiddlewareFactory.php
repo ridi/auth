@@ -24,7 +24,7 @@ class MiddlewareFactory
 
             // Check revoked
             $token_param = $oauth2_service->getTokenParam($request);
-            $token_data = $oauth2_service->getIntrospect($token_param);
+            $token_data = $oauth2_service->getIntrospection($token_param);
             if ($token_data['active'] === false) {
                 return JsonResponse::create([
                     'error' => 'invalid_token',

@@ -545,9 +545,9 @@ class OAuth2ServiceTest extends OAuth2ServiceTestBase
     }
 
     /**
-     * @dataProvider getIntrospectProvider
+     * @dataProvider getIntrospectionProvider
      */
-    public function testGetIntrospect($access_token, $token_data, $expected)
+    public function testGetIntrospection($access_token, $token_data, $expected)
     {
         $mock_storage = $this->createMockObject('\OAuth2\Storage\AccessTokenInterface', [
             'getAccessToken' => [
@@ -558,7 +558,7 @@ class OAuth2ServiceTest extends OAuth2ServiceTestBase
         $service = $this->createOAuth2Service(false);
         $service->setTokenStorage($mock_storage);
 
-        $actual = $service->getIntrospect($access_token);
+        $actual = $service->getIntrospection($access_token);
 
         $this->assertSame($expected['active'], $actual['active']);
         $this->assertSame($expected['scope']?? null, $actual['scope']?? null);
@@ -571,7 +571,7 @@ class OAuth2ServiceTest extends OAuth2ServiceTestBase
         $this->assertSame($expected['iss']?? null, $actual['iss']?? null);
     }
 
-    public function getIntrospectProvider()
+    public function getIntrospectionProvider()
     {
         $payload = $this->createMockIntropect();
 
@@ -597,21 +597,19 @@ class OAuth2ServiceTest extends OAuth2ServiceTestBase
     }
 
     /**
-     * @dataProvider getIntrospectWithJWTProvider
+     * @dataProvider getIntrospectionWithJWTProvider
      */
-    public function testGetIntrospectWithJWT($access_token, $expected)
+    public function testGetIntrospectionWithJWT($access_token, $expected)
     {
         $payload = $this->createMockJWTOAuth2Data(true);
         $mock_storage = $this->createMockObject('\OAuth2\Storage\AccessTokenInterface', [
-            'getAccessToken' => [
-                ['input' => $access_token, 'output' => $payload]
-            ],
+            'getAccessToken' => ['input' => $access_token, 'output' => $payload],
         ]);
 
         $service = $this->createOAuth2Service(true);
         $service->setTokenStorage($mock_storage);
 
-        $actual = $service->getIntrospectWithJWT($access_token);
+        $actual = $service->getIntrospectionWithJWT($access_token);
 
         $this->assertSame($expected['active'], $actual['active']);
         $this->assertSame($expected['scope']?? null, $actual['scope']?? null);
@@ -624,7 +622,7 @@ class OAuth2ServiceTest extends OAuth2ServiceTestBase
         $this->assertSame($expected['iss']?? null, $actual['iss']?? null);
     }
 
-    public function getIntrospectWithJWTProvider()
+    public function getIntrospectionWithJWTProvider()
     {
         $expired_payload = [
             'iat' => 9800000000,

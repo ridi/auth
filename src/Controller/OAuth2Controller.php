@@ -68,8 +68,8 @@ class OAuth2Controller
 
         /** @var OAuth2Service $oauth2_service */
         $oauth2_service = $app['oauth2'];
-        $instrospect = $oauth2_service->getIntrospect($token_param);
-        return JsonResponse::create($instrospect);
+        $introspect = $oauth2_service->getIntrospection($token_param);
+        return JsonResponse::create($introspect);
     }
 
     public function revoke(Request $request, Application $app)

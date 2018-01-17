@@ -80,7 +80,7 @@ class OAuth2Service
         return $this->server->verifyResourceRequest($bridge_request, $bridge_response);
     }
 
-    public function getTokenParam(Request $request): string
+    public function getTokenParam(Request $request): ?string
     {
         $bridge_request = BridgeRequest::createFromRequest($request);
         $bridge_response = BridgeResponse::create();
@@ -90,105 +90,59 @@ class OAuth2Service
             'token_bearer_header_name' => 'Bearer',
         ]);
 
-        return (string)$bearer->getAccessTokenParameter($bridge_request, $bridge_response);
+        return $bearer->getAccessTokenParameter($bridge_request, $bridge_response);
     }
 
     /* @see https://tools.ietf.org/html/rfc7662#section-2.2 */
-    public function getIntrospect(string $token_param): array
+    public function getIntrospection(string $token_param): array
     {
-        $active = true;
-        $token_data = null;
+        $token_storage = $this->server->getStorage('access_token');
+        $token_data = $token_storage->getAccessToken($token_param);
 
-        // Check revoked
-        if ($active) {
-            $token_storage = $this->server->getStorage('access_token');
-            $token_data = $token_storage->getAccessToken($token_param);
-            if (!$token_data) {
-                $active = false;
-            }
+        // Check revoked and time validity
+        if (!$token_data || $token_data['expires'] < time()) {
+            return [ 'active' => false ];
         }
 
-        // Check time validity
-        if ($active) {
-            $now = time();
-            if ($token_data['expires'] < $now) {
-                $active = false;
-            }
-        }
-
-        if ($active) {
-            return [
-                'active' => true,
-                'client_id' => $token_data['client_id'],
-                'token_type' => 'Bearer',
-                'exp' => $token_data['expires'],
-                'sub' => $token_data['user_id'],
-                'aud' => $token_data['client_id'],
-                'iss' => $_ENV['OAUTH_DOMAIN'],
-            ];
-        } else {
-            return [
-                'active' => false
-            ];
-        }
+        return [
+            'active' => true,
+            'client_id' => $token_data['client_id'],
+            'token_type' => 'Bearer',
+            'exp' => $token_data['expires'],
+            'sub' => $token_data['user_id'],
+            'aud' => $token_data['client_id'],
+            'iss' => $_ENV['OAUTH_DOMAIN'],
+        ];
     }
 
     /* @see https://tools.ietf.org/html/rfc7662#section-2.2 */
-    public function getIntrospectWithJWT(string $token_param): array
+    public function getIntrospectionWithJWT(string $token_param): array
     {
-        $active = true;
-
         $jwt = new Jwt();
         $token_data = $jwt->decode($token_param, null, false);
+        $now = time();
 
-        // Malformed token param
-        if ($token_data === false) {
-            $active = false;
+        // Check JWT data and time validity
+        if (!$token_data || $now < $token_data['iat'] || $token_data['exp'] < $now) {
+            return [ 'active' => false ];
         }
 
-        // Revoked
-        if ($active) {
-            $token_storage = $this->server->getStorage('access_token');
-            if (!$token_storage->getAccessToken($token_param)) {
-                $active = false;
-            }
+        // Verify the signature of JWT
+        $client_id = $token_data['aud'];
+        $key_storage = $this->server->getStorage('public_key');
+        $public_key = $key_storage->getPublicKey($client_id);
+        $algorithm = $key_storage->getEncryptionAlgorithm($client_id);
+        $token_data = $jwt->decode($token_param, $public_key, [$algorithm]);
+        if (!$token_data) {
+            return [ 'active' => false ];
         }
 
-        // Check time validity
-        if ($active) {
-            $now = time();
-            if ($now < $token_data['iat'] || $token_data['exp'] < $now) {
-                $active = false;
-            }
+        $introspection = $this->getIntrospection($token_param);
+        if ($introspection['active'] === true) {
+            $introspection['iat'] = $token_data['iat'];
         }
 
-        if ($active) {
-            $client_id = $token_data['aud'];
-            $key_storage = $this->server->getStorage('public_key');
-            $public_key = $key_storage->getPublicKey($client_id);
-            $algorithm = $key_storage->getEncryptionAlgorithm($client_id);
-            $token_data = $jwt->decode($token_param, $public_key, [$algorithm]);
-            if ($token_data === false) {
-                $active = false;
-            }
-        }
-
-        if ($active) {
-            return [
-                'active' => true,
-                'client_id' => $token_data['aud'],
-                'token_type' => 'Bearer',
-                'exp' => $token_data['exp'],
-                'iat' => $token_data['iat'],
-                'sub' => $token_data['sub'],
-                'aud' => $token_data['aud'],
-                'iss' => $token_data['iss'],
-            ];
-        } else {
-            return [
-                'active' => false
-            ];
-        }
+        return $introspection;
     }
 
     public function getResponse(): ResponseInterface

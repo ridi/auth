@@ -150,7 +150,7 @@ class OAuth2ControllerTest extends ControllerTestBase
         ];
 
         $mock_oauth2 = $this->createMockObject('\Ridibooks\Auth\Services\OAuth2Service', [
-            'getIntrospect' => [
+            'getIntrospection' => [
                 ['input' => $mock_active_token, 'output' => $mock_token_data],
             ],
         ]);
