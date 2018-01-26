@@ -22,6 +22,8 @@ class AuthControllerProvider implements ControllerProviderInterface
             ->before(MiddlewareFactory::validateLogin());
         $controllers->post('/oauth2/token', [$oauth2, 'token']);
         $controllers->post('/oauth2/revoke', [$oauth2, 'revoke']);
+        $controllers->post('/oauth2/token-introspect', [$oauth2, 'tokenIntrospect'])
+            ->before(MiddlewareFactory::validateOAuth2Token());
 
         $password_auth = new PasswordAuthController();
         $controllers->get('/login', [$password_auth, 'login']);

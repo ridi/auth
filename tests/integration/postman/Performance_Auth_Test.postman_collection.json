@@ -2,7 +2,7 @@
 	"variables": [],
 	"info": {
 		"name": "Performance Auth Test",
-		"_postman_id": "963a0221-3c77-7f61-311a-633de88929ce",
+		"_postman_id": "581de6af-8cab-1d34-371d-253cb9be5f6a",
 		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
@@ -52,7 +52,10 @@
 						"url": "{{prefix}}",
 						"method": "GET",
 						"header": [],
-						"body": {},
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
 						"description": ""
 					},
 					"response": []
@@ -128,7 +131,10 @@
 										},
 										"method": "GET",
 										"header": [],
-										"body": {},
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"description": ""
 									},
 									"response": []
@@ -246,7 +252,10 @@
 												"description": ""
 											}
 										],
-										"body": {},
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"description": ""
 									},
 									"response": []
@@ -310,7 +319,10 @@
 												"description": ""
 											}
 										],
-										"body": {},
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"description": ""
 									},
 									"response": []
@@ -337,7 +349,7 @@
 									],
 									"request": {
 										"url": {
-											"raw": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri=http://bad-url.com",
+											"raw": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri=http://bad-url.com?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri=http://bad-url.com",
 											"protocol": "{{prefix}}/oauth2/authorize?client_id={{client_id}}&response_type=code&state={{state}}&redirect_uri=http",
 											"host": [
 												"bad-url",
@@ -379,7 +391,10 @@
 												"description": ""
 											}
 										],
-										"body": {},
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"description": ""
 									},
 									"response": []
@@ -454,7 +469,10 @@
 												"description": ""
 											}
 										],
-										"body": {},
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"description": ""
 									},
 									"response": []
@@ -523,7 +541,10 @@
 												"description": ""
 											}
 										],
-										"body": {},
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"description": ""
 									},
 									"response": []
@@ -703,7 +724,10 @@
 												"description": ""
 											}
 										],
-										"body": {},
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"description": ""
 									},
 									"response": []
@@ -864,7 +888,10 @@
 												"description": ""
 											}
 										],
-										"body": {},
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"description": ""
 									},
 									"response": []
@@ -990,11 +1017,9 @@
 															"const jsonData = JSON.parse(responseBody);",
 															"tests[\"access_token exists\"] = jsonData.access_token;",
 															"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
-															"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
-															"tests[\"refresh_token exists\"] = jsonData.refresh_token",
+															"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
 															"",
-															"postman.setGlobalVariable('access_token', jsonData.access_token);",
-															"postman.setGlobalVariable('refresh_token', jsonData.refresh_token);"
+															"postman.setGlobalVariable('access_token', jsonData.access_token);"
 														]
 													}
 												}
@@ -1002,13 +1027,7 @@
 											"request": {
 												"url": "{{prefix}}/oauth2/token",
 												"method": "POST",
-												"header": [
-													{
-														"key": "Cookie",
-														"value": "{{cookie}}",
-														"description": ""
-													}
-												],
+												"header": [],
 												"body": {
 													"mode": "formdata",
 													"formdata": [
@@ -1031,16 +1050,16 @@
 															"value": "{{client_secret}}"
 														},
 														{
-															"description": "",
 															"key": "code",
-															"type": "text",
-															"value": "{{authorization_code}}"
+															"value": "{{authorization_code}}",
+															"description": "",
+															"type": "text"
 														},
 														{
-															"description": "",
 															"key": "redirect_uri",
-															"type": "text",
-															"value": "{{redirect_uri}}"
+															"value": "http://fake.com/receive",
+															"description": "",
+															"type": "text"
 														}
 													]
 												},
@@ -1062,7 +1081,7 @@
 															"",
 															"const jsonData = JSON.parse(responseBody);",
 															"tests[\"error exists\"] = jsonData.error === 'invalid_grant';",
-															"tests[\"error_description exists\"] = jsonData.error_description === \"Authorization code doesn't exist or is invalid for the client\";"
+															"tests[\"error_description exists\"] = jsonData.error_description === 'Authorization code doesn\\'t exist or is invalid for the client';"
 														]
 													}
 												}
@@ -1070,13 +1089,7 @@
 											"request": {
 												"url": "{{prefix}}/oauth2/token",
 												"method": "POST",
-												"header": [
-													{
-														"key": "Cookie",
-														"value": "{{cookie}}",
-														"description": ""
-													}
-												],
+												"header": [],
 												"body": {
 													"mode": "formdata",
 													"formdata": [
@@ -1099,16 +1112,16 @@
 															"value": "{{client_secret}}"
 														},
 														{
-															"description": "",
 															"key": "code",
-															"type": "text",
-															"value": "{{authorization_code}}"
+															"value": "{{authorization_code}}",
+															"description": "",
+															"type": "text"
 														},
 														{
-															"description": "",
 															"key": "redirect_uri",
-															"type": "text",
-															"value": "{{redirect_uri}}"
+															"value": "http://fake.com/receive",
+															"description": "",
+															"type": "text"
 														}
 													]
 												},
@@ -1348,7 +1361,7 @@
 															"const jsonData = JSON.parse(responseBody);",
 															"tests[\"access_token exists\"] = jsonData.access_token;",
 															"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
-															"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
+															"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
 															"",
 															"postman.setGlobalVariable('access_token', jsonData.access_token);"
 														]
@@ -1532,7 +1545,7 @@
 															"const jsonData = JSON.parse(responseBody);",
 															"tests[\"access_token exists\"] = jsonData.access_token;",
 															"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
-															"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
+															"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
 															"tests[\"refresh_token exists\"] = jsonData.refresh_token",
 															"",
 															"postman.setGlobalVariable('access_token', jsonData.access_token);",
@@ -1591,6 +1604,67 @@
 									"name": "refresh token 방식",
 									"description": "",
 									"item": [
+										{
+											"name": "200: token 발급 성공",
+											"event": [
+												{
+													"listen": "test",
+													"script": {
+														"type": "text/javascript",
+														"exec": [
+															"const h = eval(globals.loadHelpers);",
+															"h.printResponseBody();",
+															"h.testStatus(200);",
+															"",
+															"const jsonData = JSON.parse(responseBody);",
+															"tests[\"access_token exists\"] = jsonData.access_token;",
+															"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
+															"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
+															"tests[\"refresh_token exists\"] = jsonData.refresh_token",
+															"",
+															"postman.setGlobalVariable('access_token', jsonData.access_token);",
+															"postman.setGlobalVariable('refresh_token', jsonData.refresh_token);"
+														]
+													}
+												}
+											],
+											"request": {
+												"url": "{{prefix}}/oauth2/token",
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "formdata",
+													"formdata": [
+														{
+															"description": "",
+															"key": "grant_type",
+															"type": "text",
+															"value": "refresh_token"
+														},
+														{
+															"description": "",
+															"key": "client_id",
+															"type": "text",
+															"value": "{{client_id}}"
+														},
+														{
+															"description": "",
+															"key": "client_secret",
+															"type": "text",
+															"value": "{{client_secret}}"
+														},
+														{
+															"description": "",
+															"key": "refresh_token",
+															"type": "text",
+															"value": "{{refresh_token}}"
+														}
+													]
+												},
+												"description": ""
+											},
+											"response": []
+										},
 										{
 											"name": "400: 잘못된 refresh token 사용",
 											"event": [
@@ -1708,70 +1782,303 @@
 												"description": ""
 											},
 											"response": []
-										},
-										{
-											"name": "200: token 발급 성공",
-											"event": [
-												{
-													"listen": "test",
-													"script": {
-														"type": "text/javascript",
-														"exec": [
-															"const h = eval(globals.loadHelpers);",
-															"h.printResponseBody();",
-															"h.testStatus(200);",
-															"",
-															"const jsonData = JSON.parse(responseBody);",
-															"tests[\"access_token exists\"] = jsonData.access_token;",
-															"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
-															"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
-															"tests[\"refresh_token exists\"] = jsonData.refresh_token",
-															"",
-															"postman.setGlobalVariable('access_token', jsonData.access_token);",
-															"postman.setGlobalVariable('refresh_token', jsonData.refresh_token);"
-														]
-													}
-												}
-											],
-											"request": {
-												"url": "{{prefix}}/oauth2/token",
-												"method": "POST",
-												"header": [],
-												"body": {
-													"mode": "formdata",
-													"formdata": [
-														{
-															"description": "",
-															"key": "grant_type",
-															"type": "text",
-															"value": "refresh_token"
-														},
-														{
-															"description": "",
-															"key": "client_id",
-															"type": "text",
-															"value": "{{client_id}}"
-														},
-														{
-															"description": "",
-															"key": "client_secret",
-															"type": "text",
-															"value": "{{client_secret}}"
-														},
-														{
-															"description": "",
-															"key": "refresh_token",
-															"type": "text",
-															"value": "{{refresh_token}}"
-														}
-													]
-												},
-												"description": ""
-											},
-											"response": []
 										}
 									],
 									"_postman_isSubFolder": true
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "/token-introspect: token 정보 출력",
+							"description": "",
+							"item": [
+								{
+									"name": "401: 잘못된 서버 인증 token으로 시도",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(401);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"error exists\"] = jsonData.error === 'invalid_token';",
+													"tests[\"error_description exist\"] = jsonData.error_description === 'The access token provided is invalid';"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": "{{prefix}}/oauth2/token-introspect",
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer wrong_token",
+												"description": ""
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"description": "",
+													"key": "token",
+													"type": "text",
+													"value": "{{access_token}}"
+												}
+											]
+										},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "# 준비: client credentials 방식으로 서버 인증 token 발급",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"access_token exists\"] = jsonData.access_token;",
+													"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
+													"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
+													"",
+													"postman.setGlobalVariable('server_access_token', jsonData.access_token);"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": "{{prefix}}/oauth2/token",
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"description": "",
+													"key": "grant_type",
+													"type": "text",
+													"value": "client_credentials"
+												},
+												{
+													"description": "",
+													"key": "client_id",
+													"type": "text",
+													"value": "{{client_id}}"
+												},
+												{
+													"description": "",
+													"key": "client_secret",
+													"type": "text",
+													"value": "{{client_secret}}"
+												}
+											]
+										},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "200: token 정보 출력",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"active exists\"] = jsonData.active === true;",
+													"tests[\"client_id exists\"] = jsonData.client_id === pm.environment.get('client_id');",
+													"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
+													"tests[\"exp exists\"] = jsonData.exp;",
+													"tests[\"sub exists\"] = jsonData.sub === pm.environment.get('user_idx');",
+													"tests[\"aud exists\"] = jsonData.aud === pm.environment.get('client_id');",
+													"tests[\"iss exists\"] = jsonData.iss === 'localhost';"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": "{{prefix}}/oauth2/token-introspect",
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{server_access_token}}",
+												"description": ""
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"description": "",
+													"key": "token",
+													"type": "text",
+													"value": "{{access_token}}"
+												}
+											]
+										},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "200: 제대로 서명되지 않은 token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"active exists\"] = jsonData.active === false;",
+													"tests[\"no others exists\"] = Object.keys(jsonData).length === 1;"
+												]
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"var accessToken = postman.getGlobalVariable('access_token');",
+													"var unsignedAccessToken = accessToken.substring(0, accessToken.length - 1);",
+													"postman.setGlobalVariable('unsigned_access_token', unsignedAccessToken);"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": "{{prefix}}/oauth2/token-introspect",
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{server_access_token}}",
+												"description": ""
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"description": "",
+													"key": "token",
+													"type": "text",
+													"value": "{{unsigned_access_token}}"
+												}
+											]
+										},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "# 준비: token 무효화 (revoke)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"Check revoked\"] = jsonData.revoked === true;"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": "{{prefix}}/oauth2/revoke",
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"description": "",
+													"key": "token",
+													"type": "text",
+													"value": "{{access_token}}"
+												},
+												{
+													"key": "token_type_hint",
+													"value": "access_token",
+													"description": ""
+												}
+											]
+										},
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "200: revoke된 token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"const h = eval(globals.loadHelpers);",
+													"h.printResponseBody();",
+													"h.testStatus(200);",
+													"",
+													"const jsonData = JSON.parse(responseBody);",
+													"tests[\"active exists\"] = jsonData.active === false;",
+													"tests[\"no others exists\"] = Object.keys(jsonData).length === 1;"
+												]
+											}
+										}
+									],
+									"request": {
+										"url": "{{prefix}}/oauth2/token-introspect",
+										"method": "POST",
+										"header": [
+											{
+												"key": "Authorization",
+												"value": "Bearer {{server_access_token}}",
+												"description": ""
+											}
+										],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"description": "",
+													"key": "token",
+													"type": "text",
+													"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpZCI6IjBlZDlhNzBmOWEzMTExMGUwYTAyZDFjMzcwZDY0NjQxZmUwMzYyYmIiLCJqdGkiOiIwZWQ5YTcwZjlhMzExMTBlMGEwMmQxYzM3MGQ2NDY0MWZlMDM2MmJiIiwiaXNzIjoibG9jYWxob3N0IiwiYXVkIjoiZGVtb2NsaWVudCIsInN1YiI6bnVsbCwiZXhwIjoxNTE1NTc2ODE4LCJpYXQiOjE1MTQ5NzIwMTgsInRva2VuX3R5cGUiOiJiZWFyZXIiLCJzY29wZSI6bnVsbH0.L9FV1Es0RQxRsShoQfgTWyGXGxMcoZxj6qfmyachupwe4QO8dE3RaqZFIOerFx9tGLeEW6yJ0D4cqz3N1beMGRaHD_S6MjxwYrWWhGudByn1s63k3zv6isqhxbVhOfOxV80Oyl4tppvOOQj4TEXSJLK4snP5hjOPmuOKtZI1zL2amuE4xpJaiB1cn3N3F2I3IkKDNne7t82GTCnqOYGxdEo_0xbMgzHG3sTi0LN3CDjnT1LbTNSFHVjf3CcBV32oLDlS5RmrD3HKGpMUgmS62Zf4v8-JFvFQcYK92fzSaUBMg9Ss8uSSguL6KW6fxhmFRcWZg0ZXiGdD6qd3NQRmOQ"
+												}
+											]
+										},
+										"description": ""
+									},
+									"response": []
 								}
 							],
 							"_postman_isSubFolder": true
@@ -1812,10 +2119,10 @@
 													"value": "{{refresh_token}}"
 												},
 												{
-													"key": "token_type_hint",
-													"value": "refresh_token",
 													"description": "",
-													"type": "text"
+													"key": "token_type_hint",
+													"type": "text",
+													"value": "refresh_token"
 												}
 											]
 										},
@@ -1824,7 +2131,7 @@
 									"response": []
 								},
 								{
-									"name": "# 검증: 무효화된 refresh token으로 access token 획득",
+									"name": "# 검증: 무효화된 refresh token으로 access token 획득 시도",
 									"event": [
 										{
 											"listen": "test",
@@ -1901,7 +2208,7 @@
 													"const jsonData = JSON.parse(responseBody);",
 													"tests[\"access_token exists\"] = jsonData.access_token;",
 													"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
-													"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
+													"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
 													"tests[\"refresh_token exists\"] = jsonData.refresh_token",
 													"",
 													"postman.setGlobalVariable('access_token', jsonData.access_token);",
@@ -2027,7 +2334,10 @@
 												"description": ""
 											}
 										],
-										"body": {},
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"description": ""
 									},
 									"response": []
@@ -2072,7 +2382,10 @@
 										},
 										"method": "POST",
 										"header": [],
-										"body": {},
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"description": ""
 									},
 									"response": []
@@ -2106,7 +2419,10 @@
 												"description": ""
 											}
 										],
-										"body": {},
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"description": ""
 									},
 									"response": []
@@ -2151,7 +2467,10 @@
 										},
 										"method": "GET",
 										"header": [],
-										"body": {},
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"description": ""
 									},
 									"response": []
@@ -2202,7 +2521,10 @@
 												"description": ""
 											}
 										],
-										"body": {},
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"description": ""
 									},
 									"response": []

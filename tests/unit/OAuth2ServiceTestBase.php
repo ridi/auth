@@ -4,20 +4,22 @@ declare(strict_types=1);
 namespace Ridibooks\Tests\Auth;
 
 use Doctrine\DBAL\Configuration;
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Types\Type;
+use OAuth2\Encryption\Jwt;
 use OAuth2\GrantType\AuthorizationCode;
 use OAuth2\GrantType\RefreshToken;
 use OAuth2\GrantType\UserCredentials;
 use OAuth2\Server as OAuth2Server;
 use OAuth2\Storage\Pdo as DefaultStorage;
-use PHPUnit\Framework\TestCase;
 use Ridibooks\Auth\Library\UserCredentialStorage;
 use Ridibooks\Auth\Services\OAuth2ClientGrantService;
 use Ridibooks\Auth\Services\OAuth2Service;
+use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 
-abstract class OAuth2TestBase extends TestCase
+abstract class OAuth2ServiceTestBase extends TestBase
 {
     const AUTHORIZE_PATH = 'http://ridibooks.com/auth/oauth2/authorize';
     const TOKEN_PATH = 'http://ridibooks.com/auth/oauth2/token';
@@ -25,13 +27,21 @@ abstract class OAuth2TestBase extends TestCase
     const RESOURCE_PATH = 'http://ridibooks.com/api/some/resource';
 
     const CLIENT_ID = 'test_client';
-    const CLIENT_SECRET = 'test_client_secret';
-    const CLIENT_REDIRECT_URI = 'http://fake.com';
+    const CLIENT_ID_OLD = 'test_client_id_old';
+    const CLIENT_ID_NEW = 'test_client_id_new';
+    const CLIENT_SECRET = 'test_client_pass';
+    const CLIENT_ID_RS256_JWT = 'test_client_rs256_jwt';
+    const CLIENT_SECRET_RS256_JWT = 'test_client_pass_rs256_jwt';
+    const CLIENT_ID_HS256_JWT = 'test_client_hs256_jwt';
+    const CLIENT_SECRET_HS256_JWT = 'test_client_pass_hs256_jwt';
+    const CLIENT_REDIRECT_URI = 'http://fake.com/receive';
 
     const AUTHORIZE_STATE = 'test_state';
 
-    const USER_IDX = 1;
     const USER_ID = 'testuser';
+    const USER_IDX = 1;
+    const USER_IDX_OLD = 11111111;
+    const USER_IDX_NEW = 22222222;
     const USER_PASS = '112233';
 
     const AUTHORIZE_CODE = 'test_authorize_code';
@@ -79,16 +89,35 @@ abstract class OAuth2TestBase extends TestCase
         return new \PDO($dsn, $db['user'], $db['password']);
     }
 
-    protected function createOAuth2Server($storage): OAuth2Server
+    protected function getOAuth2Config()
     {
-        $server = new OAuth2Server($storage, [
+        return [
             'auth_code_lifetime' => $_ENV['OAUTH_CODE_LIFETIME'],
             'access_lifetime' => $_ENV['OAUTH_ACCESS_LIFETIME'],
             'refresh_token_lifetime' => $_ENV['OAUTH_REFRESH_TOKEN_LIFETIME'],
             'enforce_state' => true,
-            'require_exact_redirect_uri' => true,
-        ]);
+        ];
+    }
 
+    protected function getOAuth2JWTConfig()
+    {
+        return [
+            'auth_code_lifetime' => $_ENV['OAUTH_CODE_LIFETIME'],
+            'access_lifetime' => $_ENV['OAUTH_ACCESS_LIFETIME'],
+            'refresh_token_lifetime' => $_ENV['OAUTH_REFRESH_TOKEN_LIFETIME'],
+            'enforce_state' => true,
+            'use_jwt_access_tokens' => true,
+            'store_encrypted_token_string' => false,
+            'issuer' => $_ENV['OAUTH_DOMAIN'],
+        ];
+    }
+
+    protected function createOAuth2Server($use_jwt): OAuth2Server
+    {
+        $storage = $this->createStorage();
+
+        $config = $use_jwt ? $this->getOAuth2JWTConfig() : $this->getOAuth2Config();
+        $server = new OAuth2Server($storage, $config);
         $server->addGrantType(new AuthorizationCode($storage['authorization_code']));
         $server->addGrantType(new UserCredentials($storage['user_credentials']));
         $server->addGrantType(new RefreshToken($storage['refresh_token'], [
@@ -98,7 +127,15 @@ abstract class OAuth2TestBase extends TestCase
         return $server;
     }
 
-    protected function createOAuth2Service(): OAuth2Service
+    protected function createOAuth2Service($use_jwt): OAuth2Service
+    {
+        $server = $this->createOAuth2Server($use_jwt);
+        $connection = self::getConnection('default');
+        $client_grant = new OAuth2ClientGrantService($connection);
+        return new OAuth2Service($connection, $server, $client_grant);
+    }
+
+    protected function createStorage(): array
     {
         $db = self::getDB();
         $default_connection = self::getPDO($db['default']);
@@ -107,7 +144,7 @@ abstract class OAuth2TestBase extends TestCase
         $user_credential_db = isset($db['user_credential']) ? $db['user_credential'] : $db['default'];
         $user_credential_storage = new UserCredentialStorage($user_credential_db);
 
-        $storage = [
+        return [
             'access_token' => $default_storage, // OAuth2\Storage\AccessTokenInterface
             'authorization_code' => $default_storage, // OAuth2\Storage\AuthorizationCodeInterface
             'client_credentials' => $default_storage, // OAuth2\Storage\ClientCredentialsInterface
@@ -119,10 +156,6 @@ abstract class OAuth2TestBase extends TestCase
             'jwt_bearer' => $default_storage, // OAuth2\Storage\JWTBearerInterface
             'scope' => $default_storage, // OAuth2\Storage\ScopeInterface
         ];
-
-        $server = self::createOAuth2Server($storage);
-        $link_state = new OAuth2ClientGrantService(self::getConnection('default'));
-        return new OAuth2Service(self::getConnection('default'), $server, $link_state);
     }
 
     protected static function createClient()
@@ -138,6 +171,31 @@ abstract class OAuth2TestBase extends TestCase
                 'redirect_uri' => self::CLIENT_REDIRECT_URI,
             ],
             [Type::STRING, Type::STRING, Type::STRING]
+        );
+    }
+
+    protected static function createClientGrant()
+    {
+        self::cleanClientGrant();
+
+        $db = self::getConnection('default');
+        $db->insert(
+            'oauth_client_grants',
+            [
+                'user_idx' => self::USER_IDX_OLD,
+                'client_id' => self::CLIENT_ID_OLD,
+            ],
+            [Type::INTEGER, Type::STRING]
+        );
+    }
+
+    protected static function cleanClientGrant()
+    {
+        $db = self::getConnection('default');
+        $db->executeQuery(
+            "DELETE FROM oauth_client_grants WHERE user_idx IN (?)",
+            [[self::USER_IDX_OLD, self::USER_IDX_NEW]],
+            [Connection::PARAM_STR_ARRAY]
         );
     }
 
@@ -278,6 +336,42 @@ abstract class OAuth2TestBase extends TestCase
         );
     }
 
+    protected function getAuthorizationCodes($user_idx, $client_id)
+    {
+        $db = self::getConnection('default');
+        $rows = $db->fetchAll(
+            "SELECT * FROM oauth_authorization_codes WHERE user_id=? AND client_id=?",
+            [$user_idx, $client_id],
+            [Type::INTEGER, Type::STRING]
+        );
+
+        return $rows;
+    }
+
+    protected function getAccessTokens($user_idx, $client_id)
+    {
+        $db = self::getConnection('default');
+        $rows = $db->fetchAll(
+            "SELECT * FROM oauth_access_tokens WHERE user_id=? AND client_id=?",
+            [$user_idx, $client_id],
+            [Type::INTEGER, Type::STRING]
+        );
+
+        return $rows;
+    }
+
+    protected function getClientGrants($user_idx, $client_id)
+    {
+        $db = self::getConnection('default');
+        $rows = $db->fetchAll(
+            "SELECT * FROM oauth_client_grants WHERE user_idx=? AND client_id=? AND deleted_at is null",
+            [$user_idx, $client_id],
+            [Type::INTEGER, Type::STRING]
+        );
+
+        return $rows;
+    }
+
     protected function createAuthorizeRequest($param = []): Request
     {
         $default = [
@@ -348,5 +442,71 @@ abstract class OAuth2TestBase extends TestCase
         return Request::create(self::RESOURCE_PATH, 'POST', [
             'access_token' => $access_token,
         ]);
+    }
+
+    protected function createMockJwt($payload = null): string
+    {
+        $private_key = file_get_contents(__DIR__ . '/../id_rsa');
+        $algorithm = 'RS256';
+        $jwt = new Jwt();
+
+        if (!isset($payload)) {
+            $payload = $this->createMockJWTIntropect(true);
+        } else {
+            $payload = array_merge($this->createMockJWTIntropect(true), $payload);
+        }
+
+        return $jwt->encode($payload, $private_key, $algorithm);
+    }
+
+    protected function createMockOAuth2Data()
+    {
+        return [
+            'access_token' => self::ACCESS_TOKEN,
+            'client_id' => self::CLIENT_ID,
+            'user_id' => self::USER_IDX,
+            'expires' => 1600000000,
+            'scope' => null,
+        ];
+    }
+
+    protected function createMockIntropect()
+    {
+        return [
+            'id' => self::ACCESS_TOKEN,
+            'jti' => self::ACCESS_TOKEN,
+            'iss' => $_ENV['OAUTH_DOMAIN'],
+            'aud' => self::CLIENT_ID,
+            'sub' => self::USER_IDX,
+            'exp' => 1600000000,
+            'token_type' => 'Bearer',
+            'scope' => null,
+        ];
+    }
+
+    protected function createMockJWTOAuth2Data($use_rs256)
+    {
+        return [
+            'access_token' => self::ACCESS_TOKEN,
+            'client_id' => $use_rs256 ? self::CLIENT_ID_RS256_JWT : self::CLIENT_ID_HS256_JWT,
+            'user_id' => self::USER_IDX,
+            'expires' => 1600000000,
+            'scope' => null,
+        ];
+    }
+
+    protected function createMockJWTIntropect($use_rs256)
+    {
+        return [
+            'id' => self::ACCESS_TOKEN,
+            'jti' => self::ACCESS_TOKEN,
+            'iss' => $_ENV['OAUTH_DOMAIN'],
+            'aud' => $use_rs256 ? self::CLIENT_ID_RS256_JWT : self::CLIENT_ID_HS256_JWT,
+            'sub' => self::USER_IDX,
+            'iat' => 1500000000,
+            'exp' => 1600000000,
+            'token_type' => 'Bearer',
+            'scope' => null,
+        ];
     }
 }

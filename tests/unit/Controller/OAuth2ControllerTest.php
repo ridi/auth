@@ -17,25 +17,25 @@ class OAuth2ControllerTest extends ControllerTestBase
     {
         $mock_request = $this->createMockObject('\Symfony\Component\HttpFoundation\Request', [
             'get' => [
-                ['client_id', $this->test_client_id]
-            ]
+                ['input' => 'client_id', 'output' => $this->test_client_id],
+            ],
         ]);
 
         $mock_session = $this->createMockObject('\Symfony\Component\HttpFoundation\Session\Session', [
             'get' => [
-                ['user_idx', $this->test_user['idx']],
-                ['user_id', $this->test_user['id']],
-            ]
+                ['input' => 'user_idx', 'output' => $this->test_user['idx']],
+                ['input' => 'user_id', 'output' => $this->test_user['id']],
+            ],
         ]);
         $this->setSession($mock_session);
 
         $mock_oauth2 = $this->createMockObject('\Ridibooks\Auth\Services\OAuth2Service', [
             'validateAuthorizeRequest' => [
-                [$mock_request, true],
+                ['input' => $mock_request, 'output' => true],
             ],
             'isGrantedClient' => [
-                [[$this->test_user['idx'], $this->test_client_id], false],
-            ]
+                ['input' => [$this->test_user['idx'], $this->test_client_id], 'output' => false],
+            ],
         ]);
         $this->setOAuth2($mock_oauth2);
 
@@ -52,28 +52,28 @@ class OAuth2ControllerTest extends ControllerTestBase
     {
         $mock_request = $this->createMockObject('\Symfony\Component\HttpFoundation\Request', [
             'get' => [
-                ['client_id', $this->test_client_id],
-                ['agree', 1]
-            ]
+                ['input' => 'client_id', 'output' => $this->test_client_id],
+                ['input' => 'agree', 'output' => 1],
+            ],
         ]);
 
         $mock_session = $this->createMockObject('\Symfony\Component\HttpFoundation\Session\Session', [
             'get' => [
-                ['user_idx', $this->test_user['idx']],
-            ]
+                ['input' => 'user_idx', 'output' => $this->test_user['idx']],
+            ],
         ]);
         $this->setSession($mock_session);
 
         $mock_oauth2 = $this->createMockObject('\Ridibooks\Auth\Services\OAuth2Service', [
             'validateAuthorizeRequest' => [
-                [$mock_request, true],
+                ['input' => $mock_request, 'output' => true],
             ],
             'grant' => [
-                [$this->test_user['idx'], $this->test_client_id],
+                ['input' => $this->test_user['idx'], 'output' => $this->test_client_id],
             ],
             'handleAuthorizeRequest' => [
-                [[$mock_request, $this->test_user['idx'], true], null]
-            ]
+                ['input' => [$mock_request, $this->test_user['idx'], true], 'output' => null],
+            ],
         ]);
         $this->setOAuth2($mock_oauth2);
 
@@ -85,28 +85,28 @@ class OAuth2ControllerTest extends ControllerTestBase
     {
         $mock_request = $this->createMockObject('\Symfony\Component\HttpFoundation\Request', [
             'get' => [
-                ['client_id', $this->test_client_id],
-                ['agree', 0]
-            ]
+                ['input' => 'client_id', 'output' => $this->test_client_id],
+                ['input' => 'agree', 'output' => 0],
+            ],
         ]);
 
         $mock_session = $this->createMockObject('\Symfony\Component\HttpFoundation\Session\Session', [
             'get' => [
-                ['user_idx', $this->test_user['idx']],
-            ]
+                ['input' => 'user_idx', 'output' => $this->test_user['idx']],
+            ],
         ]);
         $this->setSession($mock_session);
 
         $mock_oauth2 = $this->createMockObject('\Ridibooks\Auth\Services\OAuth2Service', [
             'validateAuthorizeRequest' => [
-                [$mock_request, true],
+                ['input' => $mock_request, 'output' => true],
             ],
             'deny' => [
-                [$this->test_user['idx'], $this->test_client_id],
+                ['input' => $this->test_user['idx'], 'output' => $this->test_client_id],
             ],
             'handleAuthorizeRequest' => [
-                [[$mock_request, $this->test_user['idx'], false], null]
-            ]
+                ['input' => [$mock_request, $this->test_user['idx'], false], 'output' => null],
+            ],
         ]);
         $this->setOAuth2($mock_oauth2);
 
@@ -119,8 +119,8 @@ class OAuth2ControllerTest extends ControllerTestBase
         $mock_request = $this->createMockObject('\Symfony\Component\HttpFoundation\Request');
         $mock_oauth2 = $this->createMockObject('\Ridibooks\Auth\Services\OAuth2Service', [
             'handleTokenRequest' => [
-                [$mock_request, null]
-            ]
+                ['input' => $mock_request, 'output' => null],
+            ],
         ]);
         $this->setOAuth2($mock_oauth2);
 
@@ -128,13 +128,56 @@ class OAuth2ControllerTest extends ControllerTestBase
         $controller->token($mock_request, $this->test_app);
     }
 
+    public function testTokenIntrospect()
+    {
+        $mock_active_token = 'some_active_token';
+        $mock_request = $this->createMockObject('\Symfony\Component\HttpFoundation\Request', [
+            'get' => [
+                ['input' => 'token', 'output' => $mock_active_token],
+            ]
+        ]);
+
+        $mock_token_data = [
+            'active' => true,
+            'scope' => null,
+            'client_id' => 'test_client',
+            'token_type' => 'Bearer',
+            'exp' => 1515480000,
+            'iat' => 1515470000,
+            'sub' => 1,
+            'aud' => 'test_client',
+            'iss' => 'localhost',
+        ];
+
+        $mock_oauth2 = $this->createMockObject('\Ridibooks\Auth\Services\OAuth2Service', [
+            'getIntrospection' => [
+                ['input' => $mock_active_token, 'output' => $mock_token_data],
+            ],
+        ]);
+        $this->setOAuth2($mock_oauth2);
+
+        $controller = new OAuth2Controller();
+        $actual = $controller->tokenIntrospect($mock_request, $this->test_app);
+        $json_response = json_decode($actual->getContent(), true);
+
+        $this->assertEquals($mock_token_data['active'], $json_response['active']);
+        $this->assertEquals($mock_token_data['scope'], $json_response['scope']);
+        $this->assertEquals($mock_token_data['client_id'], $json_response['client_id']);
+        $this->assertEquals($mock_token_data['token_type'], $json_response['token_type']);
+        $this->assertEquals($mock_token_data['exp'], $json_response['exp']);
+        $this->assertEquals($mock_token_data['iat'], $json_response['iat']);
+        $this->assertEquals($mock_token_data['sub'], $json_response['sub']);
+        $this->assertEquals($mock_token_data['aud'], $json_response['aud']);
+        $this->assertEquals($mock_token_data['iss'], $json_response['iss']);
+    }
+
     public function testRevoke()
     {
         $mock_request = $this->createMockObject('\Symfony\Component\HttpFoundation\Request');
         $mock_oauth2 = $this->createMockObject('\Ridibooks\Auth\Services\OAuth2Service', [
             'handleRevokeRequest' => [
-                [$mock_request, null]
-            ]
+                ['input' => $mock_request, 'output' => null],
+            ],
         ]);
         $this->setOAuth2($mock_oauth2);
 

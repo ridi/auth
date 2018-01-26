@@ -19,7 +19,7 @@ class BshafferOauth2Schema extends AbstractMigration
         $this->table('oauth_access_tokens', ['id' => false, 'primary_key' => ['access_token']])
             ->addColumn('access_token', 'string', ['length' => 40, 'null' => false])
             ->addColumn('client_id', 'string', ['length' => 80, 'null' => true])
-            ->addColumn('user_id', 'integer', ['signed' => false, 'null' => false])
+            ->addColumn('user_id', 'integer', ['signed' => false, 'null' => true])
             ->addColumn('expires', 'timestamp', ['null' => false])
             ->addColumn('scope', 'string', ['length' => 4000, 'null' => true])
             ->create();

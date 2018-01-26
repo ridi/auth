@@ -3,25 +3,25 @@ declare(strict_types=1);
 
 namespace Ridibooks\Tests\Auth\Services;
 
-use Ridibooks\Tests\Auth\OAuth2TestBase;
+use Ridibooks\Tests\Auth\OAuth2ServiceTestBase;
 use Symfony\Component\HttpFoundation\Response;
 
-class OAuth2ServiceTest extends OAuth2TestBase
+class OAuth2ServiceTest extends OAuth2ServiceTestBase
 {
-    public function setUp()
+    protected function setUp()
     {
-        self::createClient();
         self::createAuthorizeCode();
         self::createToken();
         self::createRefreshToken();
+        self::createClientGrant();
     }
 
-    public function tearDown()
+    protected function tearDown()
     {
+        self::cleanClientGrant();
         self::cleanRefreshTokens();
         self::cleanTokens();
         self::cleanAuthorizeCodes();
-        self::cleanClient();
     }
 
     /**
@@ -31,7 +31,7 @@ class OAuth2ServiceTest extends OAuth2TestBase
     {
         $request = $this->createAuthorizeRequest($param);
 
-        $service = $this->createOAuth2Service();
+        $service = $this->createOAuth2Service(false);
         $actual = $service->validateAuthorizeRequest($request);
         $this->assertSame($expected, $actual);
     }
@@ -85,7 +85,7 @@ class OAuth2ServiceTest extends OAuth2TestBase
         $request = $this->createAuthorizeRequest($param['request']);
 
         /* @var Response $response */
-        $service = $this->createOAuth2Service();
+        $service = $this->createOAuth2Service(false);
         $response = $service->handleAuthorizeRequest($request, $param['user_id'], $param['is_authorized']);
 
         $actual_redirect = $response->headers->get('location');
@@ -175,7 +175,7 @@ class OAuth2ServiceTest extends OAuth2TestBase
         $request = $this->createTokenRequestWithAuthorizationCode($param);
 
         /* @var Response $response */
-        $service = $this->createOAuth2Service();
+        $service = $this->createOAuth2Service(false);
         $response = $service->handleTokenRequest($request);
         $actual = json_decode((string) $response->getContent(), true);
 
@@ -296,7 +296,7 @@ class OAuth2ServiceTest extends OAuth2TestBase
         $request = $this->createTokenRequestWithUserCredentials($param);
 
         /* @var Response $response */
-        $service = $this->createOAuth2Service();
+        $service = $this->createOAuth2Service(false);
         $response = $service->handleTokenRequest($request);
         $actual = json_decode((string) $response->getContent(), true);
 
@@ -403,7 +403,7 @@ class OAuth2ServiceTest extends OAuth2TestBase
         $request = $this->createTokenRequestWithRefreshToken($param);
 
         /* @var Response $response */
-        $service = $this->createOAuth2Service();
+        $service = $this->createOAuth2Service(false);
         $response = $service->handleTokenRequest($request);
         $actual = json_decode((string) $response->getContent(), true);
 
@@ -496,55 +496,6 @@ class OAuth2ServiceTest extends OAuth2TestBase
     }
 
     /**
-     * @dataProvider getTokenDataProvider
-     */
-    public function testGetTokenData($access_token, $expected)
-    {
-        $request = $this->createResourceRequest($access_token);
-
-        $service = $this->createOAuth2Service();
-        $actual = $service->getTokenData($request);
-
-        $this->assertSame($expected['data_exists'], !empty($actual));
-        if ($actual) {
-            $this->assertSame($expected['access_token'], empty($actual['access_token']) ? null : $actual['access_token']);
-            $this->assertSame($expected['client_id'], empty($actual['client_id']) ? null : $actual['client_id']);
-            $this->assertSame($expected['user_id'], empty($actual['user_id']) ? null : $actual['user_id']);
-            $this->assertSame($expected['expires'], empty($actual['expires']) ? null : $actual['expires']);
-        }
-    }
-
-    public function getTokenDataProvider()
-    {
-        $default_expected = [
-            'data_exists' => true,
-            'access_token' => self::ACCESS_TOKEN,
-            'client_id' => self::CLIENT_ID,
-            'user_id' => strval(self::USER_IDX),
-            'expires' => 1577836800,
-        ];
-
-        return [
-            'normal' => [
-                self::ACCESS_TOKEN,
-                $default_expected,
-            ],
-            'empty token' => [
-                null,
-                ['data_exists' => false],
-            ],
-            'wrong token' => [
-                'wrong token',
-                ['data_exists' => false],
-            ],
-            'expired token' => [
-                self::ACCESS_TOKEN_EXPIRED,
-                ['data_exists' => false],
-            ],
-        ];
-    }
-
-    /**
      * @dataProvider handleRevokeRequestProvider
      */
     public function testHandleRevokeRequest($param, $expected)
@@ -552,7 +503,7 @@ class OAuth2ServiceTest extends OAuth2TestBase
         $request = $this->createRevokeRequest($param);
 
         /* @var Response $response */
-        $service = $this->createOAuth2Service();
+        $service = $this->createOAuth2Service(false);
         $response = $service->handleRevokeRequest($request);
         $actual = json_decode((string) $response->getContent(), true);
 
@@ -590,6 +541,192 @@ class OAuth2ServiceTest extends OAuth2TestBase
                 ['token' => 'wrong_token'],
                 $default_expected,
             ],
+        ];
+    }
+
+    /**
+     * @dataProvider getIntrospectionProvider
+     */
+    public function testGetIntrospection($access_token, $token_data, $expected)
+    {
+        $mock_storage = $this->createMockObject('\OAuth2\Storage\AccessTokenInterface', [
+            'getAccessToken' => [
+                ['input' => $access_token, 'output' => $token_data]
+            ],
+        ]);
+
+        $service = $this->createOAuth2Service(false);
+        $service->setTokenStorage($mock_storage);
+
+        $actual = $service->getIntrospection($access_token);
+
+        $this->assertSame($expected['active'], $actual['active']);
+        $this->assertSame($expected['scope']?? null, $actual['scope']?? null);
+        $this->assertSame($expected['client_id']?? null, $actual['aud']?? null);
+        $this->assertSame($expected['exp']?? null, $actual['exp']?? null);
+        $this->assertSame($expected['token_type']?? null, $actual['token_type']?? null);
+        $this->assertSame($expected['iat']?? null, $actual['iat']?? null);
+        $this->assertSame($expected['sub']?? null, $actual['sub']?? null);
+        $this->assertSame($expected['aud']?? null, $actual['aud']?? null);
+        $this->assertSame($expected['iss']?? null, $actual['iss']?? null);
+    }
+
+    public function getIntrospectionProvider()
+    {
+        $payload = $this->createMockIntropect();
+
+        return [
+            'normal' => [
+                self::ACCESS_TOKEN,
+                $this->createMockOAuth2Data(),
+                array_merge($payload, [
+                    'active' => true,
+                    'client_id' => $payload['aud'],
+                ]),
+            ],
+            'expired' => [
+                self::ACCESS_TOKEN,
+                array_merge($this->createMockOAuth2Data(), [
+                    'expires' => '1500000000',
+                ]),
+                [
+                    'active' => false,
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider getIntrospectionWithJWTProvider
+     */
+    public function testGetIntrospectionWithJWT($access_token, $expected)
+    {
+        $payload = $this->createMockJWTOAuth2Data(true);
+        $mock_storage = $this->createMockObject('\OAuth2\Storage\AccessTokenInterface', [
+            'getAccessToken' => ['input' => $access_token, 'output' => $payload],
+        ]);
+
+        $service = $this->createOAuth2Service(true);
+        $service->setTokenStorage($mock_storage);
+
+        $actual = $service->getIntrospectionWithJWT($access_token);
+
+        $this->assertSame($expected['active'], $actual['active']);
+        $this->assertSame($expected['scope']?? null, $actual['scope']?? null);
+        $this->assertSame($expected['client_id']?? null, $actual['aud']?? null);
+        $this->assertSame($expected['token_type']?? null, $actual['token_type']?? null);
+        $this->assertSame($expected['exp']?? null, $actual['exp']?? null);
+        $this->assertSame($expected['iat']?? null, $actual['iat']?? null);
+        $this->assertSame($expected['sub']?? null, $actual['sub']?? null);
+        $this->assertSame($expected['aud']?? null, $actual['aud']?? null);
+        $this->assertSame($expected['iss']?? null, $actual['iss']?? null);
+    }
+
+    public function getIntrospectionWithJWTProvider()
+    {
+        $expired_payload = [
+            'iat' => 9800000000,
+            'exp' => 9900000000,
+        ];
+
+        $before_issued_payload = [
+            'iat' => 1000000000,
+            'exp' => 1000000001,
+        ];
+
+        $payload = $this->createMockJWTIntropect(true);
+
+        return [
+            'normal' => [
+                $this->createMockJwt(),
+                array_merge($payload, [
+                    'active' => true,
+                    'client_id' => $payload['aud'],
+                ]),
+            ],
+            'expired' => [
+                $this->createMockJwt($expired_payload),
+                [
+                    'active' => false,
+                ],
+            ],
+            'before issued' => [
+                $this->createMockJwt($before_issued_payload),
+                [
+                    'active' => false,
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider isGrantedClientProvider
+     */
+    public function testIsGrantedClient($user_id, $client_id, $expected)
+    {
+        $service = $this->createOAuth2Service(false);
+        $actual = $service->isGrantedClient($user_id, $client_id);
+
+        $this->assertSame($expected, $actual);
+    }
+
+    public function isGrantedClientProvider()
+    {
+        return [
+            'Granted' => [self::USER_IDX_OLD, self::CLIENT_ID_OLD, true],
+            'Not granted (user_id not exists)' => [self::USER_IDX_NEW, self::CLIENT_ID_OLD, false],
+            'Not granted (client_id not exists)' => [self::USER_IDX_OLD, self::CLIENT_ID_NEW, false],
+            'Not granted (user_id and client_id not exists)' => [self::USER_IDX_NEW, self::CLIENT_ID_NEW, false],
+        ];
+    }
+
+    /**
+     * @dataProvider grantProvider
+     */
+    public function testGrant($user_idx, $client_id, $expected)
+    {
+        $service = $this->createOAuth2Service(false);
+        $service->grant($user_idx, $client_id);
+        $grants = $this->getClientGrants($user_idx, $client_id);
+        $actual = count($grants);
+        $this->assertSame($expected, $actual);
+    }
+
+    public function grantProvider()
+    {
+        return [
+            'Grant successfully' => [self::USER_IDX_NEW, self::CLIENT_ID_NEW, 1],
+            'Not changed (old user_id, old client_id pair)' => [self::USER_IDX_OLD, self::CLIENT_ID_OLD, 1],
+            'Grant successfully (new client_id with old user_id)' => [self::USER_IDX_OLD, self::CLIENT_ID_NEW, 1],
+            'Grant successfully (new user_id with old client_id)' => [self::USER_IDX_NEW, self::CLIENT_ID_OLD, 1],
+        ];
+    }
+
+    /**
+     * @dataProvider denyProvider
+     */
+    public function testDeny($user_idx, $client_id, $expected)
+    {
+        $service = $this->createOAuth2Service(false);
+        $service->deny($user_idx, $client_id);
+        $grants = $this->getClientGrants(self::USER_IDX_OLD, self::CLIENT_ID_OLD);
+        $actual = count($grants);
+        $this->assertSame($expected, $actual);
+
+        $codes = $this->getAuthorizationCodes($user_idx, $client_id);
+        $this->assertSame(0, count($codes));
+
+        $tokens = $this->getAccessTokens($user_idx, $client_id);
+        $this->assertSame(0, count($tokens));
+    }
+
+    public function denyProvider()
+    {
+        return [
+            'Deny successfully' => [self::USER_IDX_OLD, self::CLIENT_ID_OLD, 0],
+            'Not denied (wrong user_idx and client_id)' => [self::USER_IDX_NEW, self::CLIENT_ID_NEW, 1],
+            'Not denied (wront client_id only)' => [self::USER_IDX_OLD, self::CLIENT_ID_NEW, 1],
+            'Not denied (wront user_idx only)' => [self::USER_IDX_NEW, self::CLIENT_ID_OLD, 1],
         ];
     }
 }

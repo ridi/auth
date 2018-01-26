@@ -3,53 +3,20 @@ declare(strict_types=1);
 
 namespace Ridibooks\Tests\Auth\Services;
 
-use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Type;
 use Ridibooks\Auth\Services\OAuth2ClientGrantService;
-use Ridibooks\Tests\Auth\OAuth2TestBase;
+use Ridibooks\Tests\Auth\OAuth2ServiceTestBase;
 
-class OAuth2ClientGrantServiceTest extends OAuth2TestBase
+class OAuth2ClientGrantServiceTest extends OAuth2ServiceTestBase
 {
-    const CLIENT_ID_OLD = 'test_client_id_old';
-    const CLIENT_ID_NEW = 'test_client_id_new';
-    const USER_IDX_OLD = 11111111;
-    const USER_IDX_NEW = 22222222;
-    const TABLE_NAME = 'oauth_client_grants';
-
     protected function setUp()
     {
-        static::createClientGrant();
+        self::createClientGrant();
     }
 
     protected function tearDown()
     {
-        static::cleanClientGrant();
-    }
-
-    private static function createClientGrant()
-    {
         self::cleanClientGrant();
-
-        $db = self::getConnection('default');
-        $db->insert(
-            self::TABLE_NAME,
-            [
-                'user_idx' => self::USER_IDX_OLD,
-                'client_id' => self::CLIENT_ID_OLD,
-            ],
-            [Type::INTEGER, Type::STRING]
-        );
-    }
-
-    private static function cleanClientGrant()
-    {
-        $table = self::TABLE_NAME;
-        $db = self::getConnection('default');
-        $db->executeQuery(
-            "DELETE FROM $table WHERE user_idx IN (?)",
-            [[self::USER_IDX_OLD, self::USER_IDX_NEW]],
-            [Connection::PARAM_STR_ARRAY]
-        );
     }
 
     /**
@@ -74,62 +41,49 @@ class OAuth2ClientGrantServiceTest extends OAuth2TestBase
     }
 
     /**
-     * @dataProvider linkProvider
+     * @dataProvider grantProvider
      */
-    public function testLink($user_idx, $client_id, $expected)
+    public function testGrant($user_idx, $client_id, $expected)
     {
         $db = self::getConnection('default');
-        $state_service = new OAuth2ClientGrantService($db);
+        $grant_service = new OAuth2ClientGrantService($db);
 
-        $state_service->grant($user_idx, $client_id);
-        $rows = $this->getLinkedStates($user_idx, $client_id);
-        $actual = count($rows);
+        $grant_service->grant($user_idx, $client_id);
+        $grants = $this->getClientGrants($user_idx, $client_id);
+        $actual = count($grants);
         $this->assertSame($expected, $actual);
     }
 
-    public function linkProvider()
+    public function grantProvider()
     {
         return [
-            'normal' => [self::USER_IDX_NEW, self::CLIENT_ID_NEW, 1],
-            'user_id, client_id pair already exists' => [self::USER_IDX_OLD, self::CLIENT_ID_OLD, 1],
-            'new client_id with user_id already exists' => [self::USER_IDX_OLD, self::CLIENT_ID_NEW, 1],
-            'new user_id with client_id already exists' => [self::USER_IDX_NEW, self::CLIENT_ID_OLD, 1],
+            'Grant successfully' => [self::USER_IDX_NEW, self::CLIENT_ID_NEW, 1],
+            'Not changed (old user_id, old client_id pair)' => [self::USER_IDX_OLD, self::CLIENT_ID_OLD, 1],
+            'Grant successfully (new client_id with old user_id)' => [self::USER_IDX_OLD, self::CLIENT_ID_NEW, 1],
+            'Grant successfully (new user_id with old client_id)' => [self::USER_IDX_NEW, self::CLIENT_ID_OLD, 1],
         ];
     }
 
     /**
-     * @dataProvider unlinkProvider
+     * @dataProvider denyProvider
      */
-    public function testUnlink($user_idx, $client_id, $expected)
+    public function testDeny($user_idx, $client_id, $expected)
     {
         $db = self::getConnection('default');
         $state_service = new OAuth2ClientGrantService($db);
         $state_service->deny($user_idx, $client_id);
-        $rows = $this->getLinkedStates(self::USER_IDX_OLD, self::CLIENT_ID_OLD);
-        $actual = count($rows);
+        $grants = $this->getClientGrants(self::USER_IDX_OLD, self::CLIENT_ID_OLD);
+        $actual = count($grants);
         $this->assertSame($expected, $actual);
     }
 
-    public function unlinkProvider()
+    public function denyProvider()
     {
         return [
-            'normal' => [self::USER_IDX_OLD, self::CLIENT_ID_OLD, 0],
-            'user_idx, client_id pair not exists' => [self::USER_IDX_NEW, self::CLIENT_ID_NEW, 1],
-            'user_idx with new client_id not exists' => [self::USER_IDX_OLD, self::CLIENT_ID_NEW, 1],
-            'client_id with new user_id not exists' => [self::USER_IDX_NEW, self::CLIENT_ID_OLD, 1],
+            'Deny successfully' => [self::USER_IDX_OLD, self::CLIENT_ID_OLD, 0],
+            'Not denied (wrong user_idx and client_id)' => [self::USER_IDX_NEW, self::CLIENT_ID_NEW, 1],
+            'Not denied (wront client_id only)' => [self::USER_IDX_OLD, self::CLIENT_ID_NEW, 1],
+            'Not denied (wront user_idx only)' => [self::USER_IDX_NEW, self::CLIENT_ID_OLD, 1],
         ];
-    }
-
-    private function getLinkedStates($user_idx, $client_id)
-    {
-        $table = self::TABLE_NAME;
-        $db = self::getConnection('default');
-        $rows = $db->fetchAll(
-            "SELECT * FROM $table WHERE user_idx=? AND client_id=? AND deleted_at is null",
-            [$user_idx, $client_id],
-            [Type::INTEGER, Type::STRING]
-        );
-
-        return $rows;
     }
 }

@@ -41,7 +41,7 @@ class OAuth2ServiceProvider implements ServiceProviderInterface
             $user_credential_storage = new UserCredentialStorage($user_credential_db);
 
             return [
-                'access_token' => null, // !! AccessToken storage is removed (Datas are stored in JWT token)
+                'access_token' => $default_storage, // OAuth2\Storage\AccessTokenInterface
                 'authorization_code' => $default_storage, // OAuth2\Storage\AuthorizationCodeInterface
                 'client_credentials' => $default_storage, // OAuth2\Storage\ClientCredentialsInterface
                 'client' => $default_storage, // OAuth2\Storage\ClientInterface
@@ -60,10 +60,7 @@ class OAuth2ServiceProvider implements ServiceProviderInterface
                 'auth_code_lifetime' => $_ENV['OAUTH_CODE_LIFETIME'],
                 'access_lifetime' => $_ENV['OAUTH_ACCESS_LIFETIME'],
                 'refresh_token_lifetime' => $_ENV['OAUTH_REFRESH_TOKEN_LIFETIME'],
-                'use_jwt_access_tokens' => true,
-                'store_encrypted_token_string' => true,
                 'enforce_state' => true,
-                'require_exact_redirect_uri' => true,
             ]);
 
             $server->addGrantType(new AuthorizationCode($storage['authorization_code']));
@@ -76,14 +73,14 @@ class OAuth2ServiceProvider implements ServiceProviderInterface
             return $server;
         };
 
-        $app['oauth2.link_state'] = function ($app) {
+        $app['oauth2.client_grant'] = function ($app) {
             $connection = $this->getConnection($app['oauth2.db']['default']);
             return new OAuth2ClientGrantService($connection);
         };
 
         $app['oauth2'] = function ($app) {
             $connection = $this->getConnection($app['oauth2.db']['default']);
-            return new OAuth2Service($connection, $app['oauth2.server'], $app['oauth2.link_state']);
+            return new OAuth2Service($connection, $app['oauth2.server'], $app['oauth2.client_grant']);
         };
     }
 }

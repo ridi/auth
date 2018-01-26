@@ -2,6 +2,9 @@
 
 RewriteEngine On
 
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+
 RewriteCond %{REQUEST_URI} !.*\.(woff|ttf|svg|js|ico|bmp|gif|jpg|jpeg|png|css|htc|xml|txt|xls|csv|ppt|pdf|doc|docx)
 RewriteCond %{SCRIPT_FILENAME} !-f
 RewriteCond %{SCRIPT_FILENAME} !-d
