@@ -5,7 +5,7 @@ set -e
 DOCKER_TAG=${TRAVIS_TAG:-latest}
 COMMIT=${TRAVIS_COMMIT::8}
 
-docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS}
+docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
 docker build -t ${DOCKER_REPO}:${COMMIT} .
 
 echo "Pushing ${DOCKER_REPO}"
