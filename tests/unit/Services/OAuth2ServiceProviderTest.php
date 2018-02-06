@@ -5,9 +5,9 @@ namespace Ridibooks\Tests\Auth\Services;
 
 use Pimple\Container;
 use Ridibooks\Auth\Services\OAuth2ServiceProvider;
-use Ridibooks\Tests\Auth\OAuth2ServiceTestBase;
+use Ridibooks\Tests\Auth\TestBase;
 
-class OAuth2ServiceProviderTest extends OAuth2ServiceTestBase
+class OAuth2ServiceProviderTest extends TestBase
 {
     public function testRegister()
     {
@@ -41,7 +41,7 @@ class OAuth2ServiceProviderTest extends OAuth2ServiceTestBase
         $oauth2_storage = $app['oauth2.storage'];
 
         $this->assertArrayHasKey('access_token', $oauth2_storage);
-        $this->assertInstanceOf('\OAuth2\Storage\AccessTokenInterface', $oauth2_storage['access_token']);
+        $this->assertNull($oauth2_storage['access_token']);
         $this->assertInstanceOf('\OAuth2\Storage\AuthorizationCodeInterface', $oauth2_storage['authorization_code']);
         $this->assertInstanceOf('\OAuth2\Storage\ClientCredentialsInterface', $oauth2_storage['client_credentials']);
         $this->assertInstanceOf('\OAuth2\Storage\ClientInterface', $oauth2_storage['client']);

@@ -4,13 +4,24 @@ declare(strict_types=1);
 namespace Ridibooks\Tests\Auth\Controller;
 
 use Ridibooks\Auth\Controller\OAuth2Controller;
-use Ridibooks\Tests\Auth\ControllerTestBase;
+use Ridibooks\Tests\Auth\TestBase;
 
-class OAuth2ControllerTest extends ControllerTestBase
+class OAuth2ControllerTest extends TestBase
 {
-    public function setUp()
+    private $test_app;
+    private $test_user;
+    private $test_client_id;
+
+    protected function setUp()
     {
-        parent::setUp();
+        $this->test_app = require __DIR__ . '/../../../src/app.php';
+        $this->test_user = [
+            'idx' => 1,
+            'id' => 'test_id',
+            'name' => 'test_name',
+            'passwd' => 'test_passwd'
+        ];
+        $this->test_client_id = 'test_client_rs256_jwt';
     }
 
     public function testAuthorize()
@@ -27,7 +38,6 @@ class OAuth2ControllerTest extends ControllerTestBase
                 ['input' => 'user_id', 'output' => $this->test_user['id']],
             ],
         ]);
-        $this->setSession($mock_session);
 
         $mock_oauth2 = $this->createMockObject('\Ridibooks\Auth\Services\OAuth2Service', [
             'validateAuthorizeRequest' => [
@@ -37,14 +47,18 @@ class OAuth2ControllerTest extends ControllerTestBase
                 ['input' => [$this->test_user['idx'], $this->test_client_id], 'output' => false],
             ],
         ]);
-        $this->setOAuth2($mock_oauth2);
+
+        $this->test_app['session'] = $mock_session;
+        $this->test_app['oauth2'] = $mock_oauth2;
 
         $controller = new OAuth2Controller();
         $actual = $controller->authorize($mock_request, $this->test_app);
+
         $expected = $this->test_app['twig']->render('agreement.twig', [
             'user_id' => $this->test_user['id'],
             'client_name' => $this->test_client_id,
         ]);
+
         $this->assertEquals($expected, $actual);
     }
 
@@ -62,7 +76,6 @@ class OAuth2ControllerTest extends ControllerTestBase
                 ['input' => 'user_idx', 'output' => $this->test_user['idx']],
             ],
         ]);
-        $this->setSession($mock_session);
 
         $mock_oauth2 = $this->createMockObject('\Ridibooks\Auth\Services\OAuth2Service', [
             'validateAuthorizeRequest' => [
@@ -75,7 +88,9 @@ class OAuth2ControllerTest extends ControllerTestBase
                 ['input' => [$mock_request, $this->test_user['idx'], true], 'output' => null],
             ],
         ]);
-        $this->setOAuth2($mock_oauth2);
+
+        $this->test_app['session'] = $mock_session;
+        $this->test_app['oauth2'] = $mock_oauth2;
 
         $controller = new OAuth2Controller();
         $controller->authorizeFormSubmit($mock_request, $this->test_app);
@@ -95,7 +110,6 @@ class OAuth2ControllerTest extends ControllerTestBase
                 ['input' => 'user_idx', 'output' => $this->test_user['idx']],
             ],
         ]);
-        $this->setSession($mock_session);
 
         $mock_oauth2 = $this->createMockObject('\Ridibooks\Auth\Services\OAuth2Service', [
             'validateAuthorizeRequest' => [
@@ -108,7 +122,9 @@ class OAuth2ControllerTest extends ControllerTestBase
                 ['input' => [$mock_request, $this->test_user['idx'], false], 'output' => null],
             ],
         ]);
-        $this->setOAuth2($mock_oauth2);
+
+        $this->test_app['session'] = $mock_session;
+        $this->test_app['oauth2'] = $mock_oauth2;
 
         $controller = new OAuth2Controller();
         $controller->authorizeFormSubmit($mock_request, $this->test_app);
@@ -122,7 +138,8 @@ class OAuth2ControllerTest extends ControllerTestBase
                 ['input' => $mock_request, 'output' => null],
             ],
         ]);
-        $this->setOAuth2($mock_oauth2);
+
+        $this->test_app['oauth2'] = $mock_oauth2;
 
         $controller = new OAuth2Controller();
         $controller->token($mock_request, $this->test_app);
@@ -150,11 +167,15 @@ class OAuth2ControllerTest extends ControllerTestBase
         ];
 
         $mock_oauth2 = $this->createMockObject('\Ridibooks\Auth\Services\OAuth2Service', [
-            'getIntrospection' => [
+            'getConfig' => [
+                ['input' => 'use_jwt_access_tokens', 'output' => true]
+            ],
+            'getIntrospectionWithJWT' => [
                 ['input' => $mock_active_token, 'output' => $mock_token_data],
             ],
         ]);
-        $this->setOAuth2($mock_oauth2);
+
+        $this->test_app['oauth2'] = $mock_oauth2;
 
         $controller = new OAuth2Controller();
         $actual = $controller->tokenIntrospect($mock_request, $this->test_app);
@@ -179,7 +200,8 @@ class OAuth2ControllerTest extends ControllerTestBase
                 ['input' => $mock_request, 'output' => null],
             ],
         ]);
-        $this->setOAuth2($mock_oauth2);
+
+        $this->test_app['oauth2'] = $mock_oauth2;
 
         $controller = new OAuth2Controller();
         $controller->revoke($mock_request, $this->test_app);

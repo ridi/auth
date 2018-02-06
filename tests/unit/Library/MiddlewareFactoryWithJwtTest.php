@@ -4,26 +4,16 @@ declare(strict_types=1);
 namespace Ridibooks\Tests\Auth\Library;
 
 use Ridibooks\Auth\Library\MiddlewareFactory;
-use Ridibooks\Tests\Auth\TestBase;
-use Ridibooks\Tests\Auth\TestData;
+use Ridibooks\Tests\Auth\TestDataWithRS256JWT;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class MiddlewareFactoryTest extends TestBase
+class MiddlewareFactoryWithJwtTest extends MiddlewareFactoryTest
 {
-    /** @var TestData $data */
-    protected $data;
-
-    public function __construct(?string $name = null, array $data = [], string $dataName = '')
-    {
-        parent::__construct($name, $data, $dataName);
-        $this->setTestDataFactory();
-    }
-
     protected function setTestDataFactory()
     {
-        $this->data = new TestData();
+        $this->data = new TestDataWithRS256JWT();
     }
 
     /**
@@ -64,7 +54,7 @@ class MiddlewareFactoryTest extends TestBase
 
     public function validateOAuth2TokenProvider()
     {
-        $token = $this->data->access_token_normal;
+        $token = $this->data->createMockJwt();
 
         $default_token_param = ['access_token' => $token];
         $wrong_token_param = ['access_token' => 'wrong_token'];

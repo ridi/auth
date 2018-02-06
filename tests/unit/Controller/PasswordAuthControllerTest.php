@@ -4,16 +4,26 @@ declare(strict_types=1);
 namespace Ridibooks\Tests\Auth\Controller;
 
 use Ridibooks\Auth\Controller\PasswordAuthController;
-use Ridibooks\Tests\Auth\ControllerTestBase;
+use Ridibooks\Tests\Auth\TestBase;
 use Symfony\Component\HttpFoundation\Response;
 
-class PasswordAuthControllerTest extends ControllerTestBase
+class PasswordAuthControllerTest extends TestBase
 {
+    private $test_app;
+    private $test_user;
+    private $test_client_id;
     private $test_return_url;
 
-    public function setUp()
+    protected function setUp()
     {
-        parent::setUp();
+        $this->test_app = require __DIR__ . '/../../../src/app.php';
+        $this->test_user = [
+            'idx' => 1,
+            'id' => 'test_id',
+            'name' => 'test_name',
+            'passwd' => 'test_passwd'
+        ];
+        $this->test_client_id = 'test_client_rs256_jwt';
         $this->test_return_url = 'test_return_url';
     }
 
@@ -48,7 +58,6 @@ class PasswordAuthControllerTest extends ControllerTestBase
                 ['input' => 'user_name', 'output' => $this->test_user['name']],
             ]
         ]);
-        $this->setSession($mock_session);
 
         $mock_storage = $this->createMockObject('\Ridibooks\Auth\Library\UserCredentialStorage', [
             'checkUserCredentials' => [
@@ -58,7 +67,9 @@ class PasswordAuthControllerTest extends ControllerTestBase
                 ['input' => null, 'output' => $this->test_user]
             ],
         ]);
-        $this->setUserCredentialStorage($mock_storage);
+
+        $this->test_app['session'] = $mock_session;
+        $this->test_app['oauth2.storage'] = ['user_credentials' => $mock_storage];
 
         $controller = new PasswordAuthController();
         $response = $controller->loginFormSubmit($mock_request, $this->test_app);
@@ -75,7 +86,8 @@ class PasswordAuthControllerTest extends ControllerTestBase
                 ['input' => null, 'output' => null]
             ]
         ]);
-        $this->setSession($mock_session);
+
+        $this->test_app['session'] = $mock_session;
 
         $controller = new PasswordAuthController();
         $response = $controller->logout($this->test_app);
