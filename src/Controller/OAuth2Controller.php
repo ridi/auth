@@ -68,7 +68,11 @@ class OAuth2Controller
 
         /** @var OAuth2Service $oauth2_service */
         $oauth2_service = $app['oauth2'];
-        $introspect = $oauth2_service->getIntrospection($token_param);
+        if ($oauth2_service->getConfig('use_jwt_access_tokens')) {
+            $introspect = $oauth2_service->getIntrospectionWithJWT($token_param);
+        } else {
+            $introspect = $oauth2_service->getIntrospection($token_param);
+        }
         return JsonResponse::create($introspect);
     }
 

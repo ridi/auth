@@ -101,7 +101,7 @@ class OAuth2Service
 
         // Check revoked and time validity
         if (!$token_data || $token_data['expires'] < time()) {
-            return [ 'active' => false ];
+            return ['active' => false];
         }
 
         return [
@@ -124,7 +124,7 @@ class OAuth2Service
 
         // Check JWT data and time validity
         if (!$token_data || $now < $token_data['iat'] || $token_data['exp'] < $now) {
-            return [ 'active' => false ];
+            return ['active' => false];
         }
 
         // Verify the signature of JWT
@@ -134,15 +134,24 @@ class OAuth2Service
         $algorithm = $key_storage->getEncryptionAlgorithm($client_id);
         $token_data = $jwt->decode($token_param, $public_key, [$algorithm]);
         if (!$token_data) {
-            return [ 'active' => false ];
+            return ['active' => false];
         }
 
-        $introspection = $this->getIntrospection($token_param);
-        if ($introspection['active'] === true) {
-            $introspection['iat'] = $token_data['iat'];
+        // Check revoked and time validity
+        $now = time();
+        if (!$token_data || $now < $token_data['iat'] || $token_data['exp'] < $now) {
+            return ['active' => false];
         }
 
-        return $introspection;
+        return array_merge($token_data, [
+            'active' => true,
+            'client_id' => $token_data['aud'],
+        ]);
+    }
+
+    public function getConfig(string $name, $default = null)
+    {
+        return $this->server->getConfig($name, $default);
     }
 
     public function getResponse(): ResponseInterface

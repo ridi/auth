@@ -41,7 +41,7 @@ class OAuth2ServiceProvider implements ServiceProviderInterface
             $user_credential_storage = new UserCredentialStorage($user_credential_db);
 
             return [
-                'access_token' => $default_storage, // OAuth2\Storage\AccessTokenInterface
+                'access_token' => null, // OAuth2\Storage\AccessTokenInterface
                 'authorization_code' => $default_storage, // OAuth2\Storage\AuthorizationCodeInterface
                 'client_credentials' => $default_storage, // OAuth2\Storage\ClientCredentialsInterface
                 'client' => $default_storage, // OAuth2\Storage\ClientInterface
@@ -61,6 +61,9 @@ class OAuth2ServiceProvider implements ServiceProviderInterface
                 'access_lifetime' => $_ENV['OAUTH_ACCESS_LIFETIME'],
                 'refresh_token_lifetime' => $_ENV['OAUTH_REFRESH_TOKEN_LIFETIME'],
                 'enforce_state' => true,
+                'use_jwt_access_tokens' => true,
+                'issuer' => $_ENV['OAUTH_DOMAIN'],
+                'require_exact_redirect_uri' => true,
             ]);
 
             $server->addGrantType(new AuthorizationCode($storage['authorization_code']));

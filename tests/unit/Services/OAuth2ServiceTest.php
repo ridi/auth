@@ -75,7 +75,7 @@ class OAuth2ServiceTest extends TestBase
                 false,
             ],
             'redirect_uri with param' => [
-                array_merge($default_param, ['redirect_uri' => $this->data->client_redirect_uri. '?foo=bar']),
+                array_merge($default_param, ['redirect_uri' => $this->data->client_redirect_uri . '?foo=bar']),
                 false,
             ],
             'empty state' => [
