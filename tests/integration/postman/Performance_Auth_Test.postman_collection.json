@@ -1017,7 +1017,7 @@
 															"const jsonData = JSON.parse(responseBody);",
 															"tests[\"access_token exists\"] = jsonData.access_token;",
 															"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
-															"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
+															"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
 															"",
 															"postman.setGlobalVariable('access_token', jsonData.access_token);"
 														]
@@ -1361,7 +1361,7 @@
 															"const jsonData = JSON.parse(responseBody);",
 															"tests[\"access_token exists\"] = jsonData.access_token;",
 															"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
-															"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
+															"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
 															"",
 															"postman.setGlobalVariable('access_token', jsonData.access_token);"
 														]
@@ -1545,7 +1545,7 @@
 															"const jsonData = JSON.parse(responseBody);",
 															"tests[\"access_token exists\"] = jsonData.access_token;",
 															"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
-															"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
+															"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
 															"tests[\"refresh_token exists\"] = jsonData.refresh_token",
 															"",
 															"postman.setGlobalVariable('access_token', jsonData.access_token);",
@@ -1619,7 +1619,7 @@
 															"const jsonData = JSON.parse(responseBody);",
 															"tests[\"access_token exists\"] = jsonData.access_token;",
 															"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
-															"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
+															"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
 															"tests[\"refresh_token exists\"] = jsonData.refresh_token",
 															"",
 															"postman.setGlobalVariable('access_token', jsonData.access_token);",
@@ -1852,7 +1852,7 @@
 													"const jsonData = JSON.parse(responseBody);",
 													"tests[\"access_token exists\"] = jsonData.access_token;",
 													"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
-													"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
+													"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
 													"",
 													"postman.setGlobalVariable('server_access_token', jsonData.access_token);"
 												]
@@ -1905,7 +1905,7 @@
 													"const jsonData = JSON.parse(responseBody);",
 													"tests[\"active exists\"] = jsonData.active === true;",
 													"tests[\"client_id exists\"] = jsonData.client_id === pm.environment.get('client_id');",
-													"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
+													"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
 													"tests[\"exp exists\"] = jsonData.exp;",
 													"tests[\"sub exists\"] = jsonData.sub === pm.environment.get('user_idx');",
 													"tests[\"aud exists\"] = jsonData.aud === pm.environment.get('client_id');",
@@ -2208,7 +2208,7 @@
 													"const jsonData = JSON.parse(responseBody);",
 													"tests[\"access_token exists\"] = jsonData.access_token;",
 													"tests[\"expires_in exists\"] = jsonData.expires_in === pm.environment.get('authorization_code_expires');",
-													"tests[\"token_type exists\"] = jsonData.token_type === 'Bearer';",
+													"tests[\"token_type exists\"] = jsonData.token_type === 'bearer';",
 													"tests[\"refresh_token exists\"] = jsonData.refresh_token",
 													"",
 													"postman.setGlobalVariable('access_token', jsonData.access_token);",
