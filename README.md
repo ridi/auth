@@ -45,4 +45,8 @@ USER_DBPASS=
 
 2. Run server with `composer run`
 
-3. Test with `bin/test.sh`
+3. Run tests:
+```bash
+bin/setup.sh # First time only.
+bin/test.sh
+```
