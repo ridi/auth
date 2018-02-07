@@ -29,7 +29,6 @@ jobs:
 
   - stage: test
     before_install:
-    - mysql -uroot -e 'SET GLOBAL max_connections = 5000; CREATE DATABASE IF NOT EXISTS oauth2;'
     - npm install -g newman@3.8.1
     script:
     - bin/setup.sh
@@ -45,10 +44,3 @@ jobs:
   - stage: deploy
     script: bin/deploy.sh
 
-notifications:
-  email: false
-  slack:
-    rooms:
-      secure: VvqCOJJohU9/ttpE1JblsvtD60jf9HBDRQ0rosyWDYOgsAQUg3Klv6ORPOD9qIgrydTox6COtd618mpAxZap+rC5H5pV230zQpVkVbys3PLbu1ZCRDd2wHQQEoL8EttuZtKsfqePBUpLEVV3kiYxpfpwfMrs6x4kbxWgp5c01bMWDLiO0C5z7r7dnAst3UZU8wStH3I0G8gKS67PFGKvBRx0i4gtdjW3enEPeODMJvDrl5G+zGUlkeSMlIet2MZcMmmvGoTMD3Wb7Lju9Eob9tOAlJTc25tMgrgrq2yISc7nsD7PHzXji/FjH6ZgTQ3hqcP3Z3vO/76bB6Gr1pmg4gYuPSUC2bidX7Y2XiyPIsIPTcPfcJYlFx/bP1FMhEJPieQz8KRjNie62N/arOwri2vpI66UupDDSOJ6dh/a/Ft92IEgxZlQXHjbvmGL690F6GfP2W8A1j3ZqynoXk0xHP4skeVedYbqRKK/gF2PKNarUw/uXKqe+QYGEo9fkDuPWDuuYmuBgVmtt27KXNyGZ+c9TnQ+RizJiP1WOPkRH/IWJJKCQMMR/5bp5qhekWkDq0+nbP7kb86wyiQiTixyvucrxXiRYRpX/Y7MznN1Yg0QsmvtdMj+v9nUFUKy00ByhdIob9TpFWHElNw4kQHxJAKdrSaQ3dHugN0kw03GlZ8=
-    on_success: change
-    on_failure: always
